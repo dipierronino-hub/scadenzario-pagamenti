@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scadenzario Pagamenti & Rateizzazioni</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --bg: #f1f5f9;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      --warning: #d97706;
+      --warning-bg: #fffbeb;
+      --success: #16a34a;
+      --success-bg: #f0fdf4;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); margin: 0; padding: 24px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    
+    header { margin-bottom: 24px; }
+    h1 { margin: 0 0 6px 0; font-size: 1.7rem; }
+    p { margin: 0; color: var(--muted); }
+
+    /* Indicatori riepilogativi */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--card-bg);
+      padding: 18px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .kpi-title { font-size: 0.85rem; font-weight: 600; color: var(--muted); text-transform: uppercase; }
+    .kpi-val { font-size: 1.6rem; font-weight: 700; margin-top: 8px; }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      padding: 22px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      align-items: flex-end;
+    }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #334155; }
+    input, select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: var(--primary); }
+
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn-primary { background: var(--primary); color: white; width: 100%; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: #334155; }
+    .btn-outline.active { background: #e0f2fe; border-color: var(--primary); color: var(--primary-dark); font-weight: 700; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-small { padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .filters { display: flex; gap: 8px; }
+
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+    th { background: #f8fafc; padding: 12px; color: #475569; font-weight: 600; border-bottom: 2px solid var(--border); }
+    td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background: #f8fafc; }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-scaduto { background: var(--danger-bg); color: var(--danger); }
+    .badge-imminente { background: var(--warning-bg); color: var(--warning); }
+    .badge-attesa { background: #f1f5f9; color: #475569; }
+    .badge-pagato { background: var(--success-bg); color: var(--success); text-decoration: line-through; }
+    .row-pagata td { color: #94a3b8; }
+    .empty-state { text-align: center; padding: 35px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Scadenzario & Gestione Rateizzazioni</h1>
+    <p>Monitora scadenze di Equitalia, bolli, polizze assicurative e tributi con calcolo automatico delle priorità.</p>
+  </header>
+
+  <!-- Cruscotto Indicatori -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-title">Totale da Saldare</div>
+      <div class="kpi-val" id="kpiDaSaldare" style="color: var(--danger);">€ 0,00</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Scadenze Urgenti / Scadute</div>
+      <div class="kpi-val" id="kpiUrgenti" style="color: var(--warning);">0</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Totale Già Pagato</div>
+      <div class="kpi-val" id="kpiPagato" style="color: var(--success);">€ 0,00</div>
+    </div>
+  </div>
+
+  <!-- Form Inserimento Nuova Scadenza -->
+  <div class="card">
+    <h3 style="margin-top: 0; margin-bottom: 16px;">+ Aggiungi Nuova Scadenza</h3>
+    <form id="scadenzaForm">
+      <div class="form-grid">
+        <div style="grid-column: span 2;">
+          <label for="titolo">Descrizione Pagamento</label>
+          <input type="text" id="titolo" placeholder="Es. Rata Riscossione n. 4 / Bollo Auto" required>
+        </div>
+        <div>
+          <label for="categoria">Categoria</label>
+          <select id="categoria" required>
+            <option value="Rateizzazione Equitalia">Rateizzazione Equitalia / AdER</option>
+            <option value="Bollo Auto">Bollo Auto</option>
+            <option value="Assicurazione">Assicurazione</option>
+            <option value="F24 / Tributi">F24 / Tributi</option>
+            <option value="Altro">Altro Pagamento</option>
+          </select>
+        </div>
+        <div>
+          <label for="importo">Importo (€)</label>
+          <input type="number" id="importo" step="0.01" min="0" placeholder="0.00" required>
+        </div>
+        <div>
+          <label for="scadenza">Data Scadenza</label>
+          <input type="date" id="scadenza" required>
+        </div>
+        <div>
+          <label for="note">Note / Riferimento</label>
+          <input type="text" id="note" placeholder="Es. Targa, protocollo, cartella">
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary">Salva Scadenza</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabella Registro Scadenze -->
+  <div class="card">
+    <div class="toolbar">
+      <div class="filters">
+        <button class="btn btn-outline active" onclick="setFiltro('tutti')">Tutti</button>
+        <button class="btn btn-outline" onclick="setFiltro('in_sospeso')">Da Pagare</button>
+        <button class="btn btn-outline" onclick="setFiltro('pagati')">Completati</button>
+      </div>
+      <div>
+        <button id="exportCsv" class="btn btn-success">📥 Esporta Excel (CSV)</button>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Stato</th>
+          <th>Scadenza</th>
+          <th>Descrizione</th>
+          <th>Categoria</th>
+          <th>Importo</th>
+          <th>Note</th>
+          <th style="text-align: right;">Azioni</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div id="emptyMsg" class="empty-state">Nessuna scadenza inserita.</div>
+  </div>
+</div>
+
+<script>
+  let filtroAttivo = 'tutti';
+
+  function getItems() {
+    return JSON.parse(localStorage.getItem('scadenziario_items') || '[]');
+  }
+
+  function saveItems(items) {
+    localStorage.setItem('scadenziario_items', JSON.stringify(items));
+    render();
+  }
+
+  function formatEuro(val) {
+    return Number(val).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
+  }
+
+  function getStatusInfo(scadenzaStr, isPagato) {
+    if (isPagato) return { label: 'Pagato', classe: 'badge-pagato' };
+
+    const oggi = new Date();
+    oggi.setHours(0,0,0,0);
+    const dataScad = new Date(scadenzaStr);
+    dataScad.setHours(0,0,0,0);
+
+    const diffDays = Math.ceil((dataScad - oggi) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return { label: `Scaduto (${Math.abs(diffDays)} gg fa)`, classe: 'badge-scaduto', isUrgent: true };
+    } else if (diffDays <= 15) {
+      return { label: diffDays === 0 ? 'Scade Oggi' : `Scade in ${diffDays} gg`, classe: 'badge-imminente', isUrgent: true };
+    } else {
+      return { label: 'Regolare', classe: 'badge-attesa', isUrgent: false };
+    }
+  }
+
+  function render() {
+    const items = getItems();
+    const tableBody = document.getElementById('tableBody');
+    const emptyMsg = document.getElementById('emptyMsg');
+
+    // Ordinamento: prima non pagati per data crescente, poi pagati
+    items.sort((a, b) => {
+      if (a.pagato === b.pagato) return new Date(a.scadenza) - new Date(b.scadenza);
+      return a.pagato ? 1 : -1;
+    });
+
+    // Calcolo metriche KPI
+    let totaleDaSaldare = 0;
+    let totalePagato = 0;
+    let contatoreUrgenti = 0;
+
+    items.forEach(it => {
+      const st = getStatusInfo(it.scadenza, it.pagato);
+      if (it.pagato) {
+        totalePagato += Number(it.importo);
+      } else {
+        totaleDaSaldare += Number(it.importo);
+        if (st.isUrgent) contatoreUrgenti++;
+      }
+    });
+
+    document.getElementById('kpiDaSaldare').textContent = formatEuro(totaleDaSaldare);
+    document.getElementById('kpiPagato').textContent = formatEuro(totalePagato);
+    document.getElementById('kpiUrgenti').textContent = contatoreUrgenti;
+
+    // Filtro elementi per tabella
+    const visibili = items.filter(it => {
+      if (filtroAttivo === 'in_sospeso') return !it.pagato;
+      if (filtroAttivo === 'pagati') return it.pagato;
+      return true;
+    });
+
+    tableBody.innerHTML = '';
+    if (visibili.length === 0) {
+      emptyMsg.style.display = 'block';
+      return;
+    }
+    emptyMsg.style.display = 'none';
+
+    visibili.forEach(item => {
+      const st = getStatusInfo(item.scadenza, item.pagato);
+      const tr = document.createElement('tr');
+      if (item.pagato) tr.className = 'row-pagata';
+
+      tr.innerHTML = `
+        <td><span class="badge ${st.classe}">${st.label}</span></td>
+        <td><strong>${item.scadenza}</strong></td>
+        <td><strong>${item.titolo}</strong></td>
+        <td>${item.categoria}</td>
+        <td><strong>${formatEuro(item.importo)}</strong></td>
+        <td>${item.note || '-'}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="btn btn-small ${item.pagato ? 'btn-outline' : 'btn-success'}" onclick="togglePagato('${item.id}')">
+            ${item.pagato ? '↩ Riapri' : '✓ Pagato'}
+          </button>
+          <button class="btn btn-small btn-outline" style="color: var(--danger); border-color: var(--danger);" onclick="eliminaItem('${item.id}')">✕</button>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
+
+  // Gestione Form
+  document.getElementById('scadenzaForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const items = getItems();
+
+    const newItem = {
+      id: 'id_' + Date.now(),
+      titolo: document.getElementById('titolo').value.trim(),
+      categoria: document.getElementById('categoria').value,
+      importo: parseFloat(document.getElementById('importo').value),
+      scadenza: document.getElementById('scadenza').value,
+      note: document.getElementById('note').value.trim(),
+      pagato: false
+    };
+
+    items.push(newItem);
+    saveItems(items);
+
+    document.getElementById('scadenzaForm').reset();
+  });
+
+  window.togglePagato = function(id) {
+    const items = getItems();
+    const target = items.find(it => it.id === id);
+    if (target) {
+      target.pagato = !target.pagato;
+      saveItems(items);
+    }
+  };
+
+  window.eliminaItem = function(id) {
+    if (confirm("Vuoi rimuovere questa voce dallo scadenzario?")) {
+      let items = getItems();
+      items = items.filter(it => it.id !== id);
+      saveItems(items);
+    }
+  };
+
+  window.setFiltro = function(f) {
+    filtroAttivo = f;
+    document.querySelectorAll('.filters .btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    render();
+  };
+
+  // Esportazione CSV
+  document.getElementById('exportCsv').addEventListener('click', () => {
+    const items = getItems();
+    if (items.length === 0) {
+      alert("Nessun dato presente.");
+      return;
+    }
+    let csv = "\uFEFFStato;Scadenza;Descrizione;Categoria;Importo;Note\n";
+    items.forEach(it => {
+      const stato = it.pagato ? "Pagato" : "Da Pagare";
+      csv += `"${stato}";"${it.scadenza}";"${it.titolo}";"${it.categoria}";"${it.importo}";"${it.note || ''}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Scadenze_Pagamenti_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Avvio iniziale
+  render();
+</script>
+</body>
+</html>
