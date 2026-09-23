@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scadenzario Cartelle AdER / Banche</title>
+  <!-- Libreria PDF.js per lettura diretta dei file PDF nel browser -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     :root {
       --primary: #0284c7;
@@ -332,27 +334,27 @@
       </form>
     </div>
 
-    <!-- 2. Importazione da File o Testo Copiato -->
+    <!-- 2. Importazione da File PDF, CSV o Testo -->
     <div id="panelImporta" style="display: none;">
-      <h3 style="margin-top:0; color: #0f766e;">📥 Importazione Piano da Scansione / File CSV</h3>
+      <h3 style="margin-top:0; color: #0f766e;">📥 Importazione Piano da File PDF AdER / CSV</h3>
       <p style="color: #475569; font-size: 0.9rem; margin-bottom: 14px;">
-        Incolla qui il testo di un'altra cartella (o seleziona un file CSV) per registrare all'istante le relative rate.
+        Seleziona direttamente il file <strong>PDF</strong> del piano di ammortamento: il sistema ne estrarrà i dati automaticamente.
       </p>
 
       <form id="importForm">
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
           <div>
-            <label for="importNomePiano">Nome Piano / Cartella:</label>
+            <label for="importNomePiano">Nome Piano / Cartella (autocompilato dal PDF):</label>
             <input type="text" id="importNomePiano" placeholder="Es. Cartella AdER n. 2026/..." required>
           </div>
           <div>
-            <label for="importCsvFile">File CSV (facoltativo):</label>
-            <input type="file" id="importCsvFile" accept=".csv, .txt">
+            <label for="importPdfFile">Seleziona File PDF (o CSV):</label>
+            <input type="file" id="importPdfFile" accept=".pdf, .csv, .txt">
           </div>
         </div>
 
         <div style="margin-bottom: 14px;">
-          <label for="importTesto">Testo dati tabella (separato da tabulazione o punto e virgola):</label>
+          <label for="importTesto">Anteprima dati estratti (compilata in automatico dal PDF):</label>
           <textarea id="importTesto" rows="6" placeholder="Rata;Data;Capitale;Mora;Interessi;Notifica;Totale
 1;30/09/2026;71.46;0.48;17.43;5.88;95.25
 2;31/10/2026;70.04;0.26;17.26;0.00;87.56"></textarea>
@@ -541,6 +543,10 @@
 </div>
 
 <script>
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
   const DATI_UFFICIALI_84_RATE = [
     { n: 1,  d: '2026-09-30', cap: 71.46, mora: 0.48, int: 17.43, notif: 5.88, tot: 95.25 },
     { n: 2,  d: '2026-10-31', cap: 70.04, mora: 0.26, int: 17.26, notif: 0.00, tot: 87.56 },
@@ -743,14 +749,12 @@
       }
     });
 
-    // Aggiornamento riquadri KPI
     document.getElementById('kpiDaSaldare').textContent = formatEuro(totaleDaSaldare);
     document.getElementById('kpiPagato').textContent = formatEuro(totalePagato);
     document.getElementById('kpiScaduti').textContent = contatoreScaduti;
     document.getElementById('kpiNumPagate').textContent = contatorePagati;
     document.getElementById('kpiNumDaPagare').textContent = contatoreDaPagare;
 
-    // Calcolo Prossima Scadenza (la più vicina nel tempo tra i non pagati)
     nonPagati.sort((a, b) => new Date(a.scadenza) - new Date(b.scadenza));
     if (nonPagati.length > 0) {
       const prox = nonPagati[0];
@@ -901,15 +905,92 @@
     event.target.value = '';
   };
 
-  // IMPORTAZIONE DA TESTO / FILE CSV PER ALTRE CARTELLE
-  document.getElementById('importCsvFile').addEventListener('change', function(e) {
+  // LETTURA DIRETTA ED ELABORAZIONE FILE PDF (O CSV)
+  document.getElementById('importPdfFile').addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      document.getElementById('importTesto').value = evt.target.result;
-    };
-    reader.readAsText(file);
+
+    if (file.name.toLowerCase().endsWith('.pdf')) {
+      if (typeof pdfjsLib === 'undefined') {
+        alert("Libreria PDF non caricata. Verifica che il computer sia connesso a Internet.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async function(evt) {
+        try {
+          const typedArray = new Uint8Array(evt.target.result);
+          const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+          let fullText = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const pageStrings = content.items.map(it => it.str).join(' ');
+            fullText += pageStrings + '\n';
+          }
+
+          if (!fullText.trim()) {
+            alert("⚠️ Questo PDF è una scansione immagine (non contiene testo digitale). Invia il file PDF qui nella nostra chat e ti preparerò subito il blocco dati pronto!");
+            return;
+          }
+
+          // Riconoscimento automatico Nome Documento / Istanza
+          const docMatch = fullText.match(/\b014\d{13,17}\b/) || fullText.match(/\b\d{16,20}\b/);
+          const istanzaMatch = fullText.match(/istanza\s*(\d+)/i);
+          let nomePiano = '';
+          if (docMatch) nomePiano = 'AdER ' + docMatch[0];
+          else if (istanzaMatch) nomePiano = 'AdER Istanza ' + istanzaMatch[1];
+          else nomePiano = file.name.replace(/\.[^/.]+$/, '');
+          document.getElementById('importNomePiano').value = nomePiano;
+
+          // Parsing delle righe della tabella
+          let righeEstratte = [];
+          
+          // Ricerca 1ª Rata
+          const dateR1Match = fullText.match(/(?:Scadenza\s*Prima\s*Rata|Prima\s*Rata).*?(\d{2}\/\d{2}\/\d{4})/i) || fullText.match(/(\d{2}\/\d{2}\/\d{4})/);
+          const capR1Match = fullText.match(/Quota\s*capitale\s*€?\s*([\d\.,]+)/i);
+          const moraR1Match = fullText.match(/Quota\s*interessi\s*di\s*mora\s*€?\s*([\d\.,]+)/i);
+          const intR1Match = fullText.match(/Quota\s*interessi\s*di\s*rateizzazione\s*€?\s*([\d\.,]+)/i);
+          const notifR1Match = fullText.match(/Diritti\s*di\s*notifica.*?[€\s]+([\d\.,]+)/i);
+          const totR1Match = fullText.match(/(?:Importo\s*Prima\s*Rata|Prima\s*Rata).*?[€\s]+([\d\.,]+)/i);
+
+          if (dateR1Match && capR1Match) {
+            righeEstratte.push(`1;${dateR1Match[1]};${capR1Match[1]};${moraR1Match ? moraR1Match[1] : '0'};${intR1Match ? intR1Match[1] : '0'};${notifR1Match ? notifR1Match[1] : '0'};${totR1Match ? totR1Match[1] : ''}`);
+          }
+
+          // Ricerca rate successive (2..N)
+          const regexRiga = /\b([2-9]|[1-9]\d{1,2})\s+(\d{2}\/\d{2}\/\d{4})\s+€?\s*([\d\.,]+)\s+€?\s*([\d\.,]+)\s+€?\s*([\d\.,]+)(?:\s+€?\s*([\d\.,]+))?\s+€?\s*([\d\.,]+)/g;
+          let m;
+          while ((m = regexRiga.exec(fullText)) !== null) {
+            const num = m[1];
+            const data = m[2];
+            const cap = m[3];
+            const mora = m[4];
+            const inter = m[5];
+            const tot = m[7] || m[6];
+            righeEstratte.push(`${num};${data};${cap};${mora};${inter};0.00;${tot}`);
+          }
+
+          if (righeEstratte.length > 0) {
+            document.getElementById('importTesto').value = "Rata;Data;Capitale;Mora;Interessi;Notifica;Totale\n" + righeEstratte.join('\n');
+            alert(`✅ PDF analizzato con successo! Riconosciute ${righeEstratte.length} rate per "${nomePiano}". Clicca su 'Importa Rate nel Registro' per salvarle.`);
+          } else {
+            alert("Il testo del PDF è stato estratto ma la tabella ha una disposizione non standard. Invia il file qui in chat per caricarlo all'istante.");
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Errore nella decodifica del PDF: " + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      // Gestione file CSV o TXT
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        document.getElementById('importTesto').value = evt.target.result;
+      };
+      reader.readAsText(file);
+    }
   });
 
   document.getElementById('importForm').addEventListener('submit', (e) => {
@@ -918,7 +999,7 @@
     const rawText = document.getElementById('importTesto').value.trim();
 
     if (!rawText) {
-      alert("Incolla i dati della tabella o seleziona un file CSV prima di importare.");
+      alert("Seleziona prima un file PDF o inserisci i dati della tabella.");
       return;
     }
 
@@ -965,7 +1046,7 @@
     });
 
     if (importati.length === 0) {
-      alert("Formato non riconosciuto. Verifica le colonne inserite.");
+      alert("Formato dati non riconosciuto.");
       return;
     }
 
@@ -974,7 +1055,7 @@
     saveItems(items);
 
     document.getElementById('importTesto').value = '';
-    document.getElementById('importCsvFile').value = '';
+    document.getElementById('importPdfFile').value = '';
     alert(`🎉 Importate con successo ${importati.length} rate per "${nomePiano}"!`);
   });
 
@@ -1245,7 +1326,6 @@
     URL.revokeObjectURL(url);
   });
 
-  // Avvio iniziale
   if (getItems().length === 0) {
     caricaPianoUfficiale572996();
   }
