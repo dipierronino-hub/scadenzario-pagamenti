@@ -28,7 +28,7 @@
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); margin: 0; padding: 24px; }
-    .container { max-width: 1480px; margin: 0 auto; }
+    .container { max-width: 1500px; margin: 0 auto; }
     
     header { 
       margin-bottom: 20px; 
@@ -76,7 +76,7 @@
       gap: 8px;
     }
     .filter-plan-bar select {
-      max-width: 580px;
+      max-width: 650px;
       font-size: 0.95rem;
       font-weight: 600;
       border: 1.5px solid var(--primary);
@@ -108,7 +108,7 @@
     /* Box Elenco Dinamico di Tutte le Cartelle */
     .plans-overview {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
       gap: 14px;
       margin-bottom: 24px;
     }
@@ -274,6 +274,21 @@
       max-height: 90vh;
       overflow-y: auto;
     }
+
+    /* Riquadro Upload Automatico */
+    .drop-pdf-box {
+      border: 2px dashed #0284c7;
+      background: #f0f9ff;
+      border-radius: 12px;
+      padding: 30px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .drop-pdf-box:hover {
+      background: #e0f2fe;
+      border-color: #0369a1;
+    }
   </style>
 </head>
 <body>
@@ -298,7 +313,7 @@
     <label for="filtroPianoSelect">
       <span>🔎 Visualizza Totali e Rate per:</span>
       <select id="filtroPianoSelect" onchange="impostaFiltroPiano(this.value)">
-        <!-- Opzioni popolate automaticamente -->
+        <!-- Popolato automaticamente -->
       </select>
     </label>
     <div id="badgeFiltroAttivo" style="font-size: 0.85rem; font-weight: 600; color: #0369a1;"></div>
@@ -355,39 +370,35 @@
   <!-- Scheda Inserimento / Gestione -->
   <div class="card">
     <div class="tabs">
-      <button class="tab-btn active" id="tabImportBtn" onclick="mostraPannello('importa')">📂 Importa Altra Cartella da File PDF / CSV</button>
+      <button class="tab-btn active" id="tabImportBtn" onclick="mostraPannello('importa')">📂 Importa Nuova Cartella da PDF (Tutto Automatico)</button>
       <button class="tab-btn" id="tabSingolaBtn" onclick="mostraPannello('singola')">➕ Inserisci Singola Spesa (Bollo, Assicurazione, ecc.)</button>
       <button class="tab-btn" id="tabPianoBtn" onclick="mostraPannello('piano')">⚙️ Gestione Piani Caricati</button>
     </div>
 
-    <!-- 1. Importazione da File PDF, CSV o Testo -->
+    <!-- 1. IMPORTAZIONE 100% AUTOMATICA DA PDF -->
     <div id="panelImporta">
-      <h3 style="margin-top:0; color: #0f766e;">📥 Importazione Piano da File PDF AdER / CSV</h3>
-      <p style="color: #475569; font-size: 0.9rem; margin-bottom: 14px;">
-        Seleziona direttamente il file <strong>PDF</strong> del piano di ammortamento o inserisci i dati della cartella:
+      <h3 style="margin-top:0; color: #0f766e;">⚡ Caricamento Automatico da Documento PDF AdER</h3>
+      <p style="color: #475569; font-size: 0.95rem; margin-bottom: 18px;">
+        Non devi scrivere nulla: seleziona il PDF del piano di ammortamento rilasciato dall'Agenzia delle Entrate - Riscossione. Il programma estrarrà direttamente il <strong>Numero Documento</strong>, l'<strong>Identificativo Istanza</strong>, la <strong>Data</strong> e <strong>tutte le rate al centesimo</strong>.
       </p>
 
-      <form id="importForm">
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
-          <div>
-            <label for="importNomePiano">Nome Piano (N. Cartella, Identificativo Istanza e Data):</label>
-            <input type="text" id="importNomePiano" placeholder="Es. Doc. 01420260025284603 - Istanza 572996 del 19/09/2026" required>
-          </div>
-          <div>
-            <label for="importPdfFile">Seleziona File PDF (o CSV):</label>
-            <input type="file" id="importPdfFile" accept=".pdf, .csv, .txt">
-          </div>
-        </div>
+      <div class="drop-pdf-box" onclick="document.getElementById('importPdfFile').click()">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">📄</div>
+        <strong style="font-size: 1.1rem; color: #0369a1; display: block; margin-bottom: 6px;">Clicca qui per selezionare il file PDF da importare</strong>
+        <span style="font-size: 0.88rem; color: #64748b;">Verrà creato e salvato istantaneamente il piano con l'intestazione completa "Doc. ... - Istanza n. ... del ..."</span>
+        <input type="file" id="importPdfFile" accept=".pdf, .csv, .txt" style="display: none;">
+      </div>
 
-        <div style="margin-bottom: 14px;">
-          <label for="importTesto">Dati tabella estratti (o incollati manualmente):</label>
-          <textarea id="importTesto" rows="6" placeholder="Rata;Data;Capitale;Mora;Interessi;Notifica;Totale
-1;30/09/2026;71.46;0.48;17.43;5.88;95.25
-2;31/10/2026;70.04;0.26;17.26;0.00;87.56"></textarea>
-        </div>
+      <div id="statusImportazione" style="margin-top: 14px; font-weight: 600; font-size: 0.95rem; color: #0284c7; display: none;"></div>
 
-        <button type="submit" class="btn btn-primary" style="width: auto; padding: 10px 18px;">⚡ Salva Nuova Cartella nello Scadenzario</button>
-      </form>
+      <details style="margin-top: 20px; font-size: 0.85rem; color: #64748b;">
+        <summary style="cursor: pointer; font-weight: 600;">Opzioni avanzate / Incolla testo manualmente (se scansione non ricercabile)</summary>
+        <div style="margin-top: 10px;">
+          <textarea id="importTesto" rows="4" placeholder="Rata;Data;Capitale;Mora;Interessi;Notifica;Totale..."></textarea>
+          <input type="text" id="importNomeManuale" placeholder="Nome cartella manuale (se non usi il PDF)" style="margin-top: 8px;">
+          <button type="button" class="btn btn-primary" style="margin-top: 8px; width: auto;" onclick="importaDaTestoManuale()">Salva Manualmente</button>
+        </div>
+      </details>
     </div>
 
     <!-- 2. Form Singola Scadenza -->
@@ -430,7 +441,7 @@
     <!-- 3. Gestione Piani -->
     <div id="panelPiano" style="display: none;">
       <h3 style="margin-top: 0;">⚙️ Gestione Piani Caricati</h3>
-      <div style="max-width: 600px; margin-bottom: 20px;">
+      <div style="max-width: 650px; margin-bottom: 20px;">
         <label for="selezionaPianoModifica">Seleziona Piano da Gestire:</label>
         <select id="selezionaPianoModifica" onchange="caricaDatiPianoPerModifica()">
           <option value="">-- Seleziona un piano --</option>
@@ -439,12 +450,12 @@
 
       <div id="boxDettaglioPianoModifica" style="display: none;">
         <div style="margin-bottom: 16px;">
-          <label>Nome Identificativo Cartella:</label>
+          <label>Nome Identificativo Cartella (Doc. ... - Istanza n. ... del ...):</label>
           <input type="text" id="editPianoNuovoNome">
         </div>
         <div style="display: flex; gap: 12px;">
           <button type="button" class="btn btn-danger" onclick="eliminaInteroPianoSelezionato()">🗑️ Elimina Intero Piano</button>
-          <button type="button" class="btn btn-primary" style="width: auto;" onclick="rinominaPianoSelezionato()">💾 Rinomina</button>
+          <button type="button" class="btn btn-primary" style="width: auto;" onclick="rinominaPianoSelezionato()">💾 Salva Modifiche Nome</button>
         </div>
       </div>
     </div>
@@ -610,8 +621,8 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
 
-  // Nome ufficiale completo dell'istanza
-  const NOME_PIANO_572996_UFFICIALE = 'Doc. 01420260025284603 - Istanza 572996 del 19/09/2026';
+  // Nome ufficiale rigoroso Istanza 572996
+  const NOME_PIANO_572996_UFFICIALE = 'Doc. 01420260025284603 - Istanza n. 572996 del 19/09/2026';
 
   const DATI_UFFICIALI_84_RATE = [
     { n: 1,  d: '2026-09-30', cap: 71.46, mora: 0.48, int: 17.43, notif: 5.88, tot: 95.25 },
@@ -794,7 +805,7 @@
   function render() {
     const allItems = getItems();
 
-    // 1. Mappa di tutte le cartelle presenti
+    // 1. Mappa cartelle
     const mappaPiani = {};
     allItems.forEach(it => {
       const pId = it.pianoId || 'SPESE_SINGOLE';
@@ -819,7 +830,7 @@
       filtroPianoAttivo = listaChiaviPiani.length > 0 ? listaChiaviPiani[0] : 'TUTTI_SOMMATI';
     }
 
-    // 2. Menu a tendina filtri
+    // 2. Menu tendina filtri
     const selectPiani = document.getElementById('filtroPianoSelect');
     selectPiani.innerHTML = '';
     
@@ -844,9 +855,10 @@
       const div = document.createElement('div');
       const isAttivo = (filtroPianoAttivo === k);
       div.className = `plan-card-item ${isAttivo ? 'active-plan' : ''}`;
+
       div.innerHTML = `
         <div style="flex: 1;">
-          <strong style="color: #0f172a; font-size: 0.92rem; display: block; margin-bottom: 3px;">${p.nome}</strong>
+          <strong style="color: #0f172a; font-size: 0.92rem; display: block; margin-bottom: 4px;">${p.nome}</strong>
           <span style="font-size: 0.8rem; color: #475569;">Rate: <strong>${p.pagate}/${p.totaleRate}</strong> pagate</span> | 
           <span style="font-size: 0.8rem; color: var(--col-dapagare);">Residuo: <strong>${formatEuro(p.residuo)}</strong></span>
           ${p.scadute > 0 ? `<br><span style="font-size: 0.75rem; color: var(--col-scaduto); font-weight:700;">⚠️ ${p.scadute} rate scadute</span>` : ''}
@@ -984,6 +996,209 @@
     });
   }
 
+  // LETTURA ED ESTRAZIONE 100% AUTOMATICA DA PDF SENZA SCRIVERE NULLA
+  document.getElementById('importPdfFile').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const statusEl = document.getElementById('statusImportazione');
+    statusEl.style.display = 'block';
+    statusEl.textContent = '⏳ Lettura ed elaborazione automatica del PDF in corso...';
+
+    if (file.name.toLowerCase().endsWith('.pdf')) {
+      if (typeof pdfjsLib === 'undefined') {
+        alert("Libreria PDF non caricata. Verifica la connessione a Internet.");
+        statusEl.style.display = 'none';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async function(evt) {
+        try {
+          const typedArray = new Uint8Array(evt.target.result);
+          const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+          let fullText = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const pageStrings = content.items.map(it => it.str).join(' ');
+            fullText += pageStrings + '\n';
+          }
+
+          if (!fullText.trim()) {
+            alert("⚠️ Questo PDF è una scansione immagine non ricercabile (OCR mancante). Invia il file PDF qui nella nostra chat e lo caricherò io al 100%!");
+            statusEl.style.display = 'none';
+            return;
+          }
+
+          // 1. Estrazione Automatica Documento, Istanza e Data
+          const docMatch = fullText.match(/\b014\d{13,17}\b/) || fullText.match(/\b\d{16,20}\b/);
+          const istanzaMatch = fullText.match(/Identificativo\s+istanza\s+(\d+)/i) || fullText.match(/istanza\s*n?\.?\s*(\d+)/i);
+          const dataIstanzaMatch = fullText.match(/istanza\s*\d+\s*del\s*(\d{2}[\/\.]\d{2}[\/\.]\d{4})/i) || fullText.match(/del\s*(\d{2}[\/\.]\d{2}[\/\.]\d{4})/i);
+
+          const numDoc = docMatch ? docMatch[0] : '';
+          const numIstanza = istanzaMatch ? istanzaMatch[1] : '';
+          const dataIst = dataIstanzaMatch ? dataIstanzaMatch[1].replace(/\./g, '/') : '';
+
+          let nomePianoCompleto = '';
+          if (numDoc && numIstanza && dataIst) {
+            nomePianoCompleto = `Doc. ${numDoc} - Istanza n. ${numIstanza} del ${dataIst}`;
+          } else if (numDoc && numIstanza) {
+            nomePianoCompleto = `Doc. ${numDoc} - Istanza n. ${numIstanza}`;
+          } else if (numDoc) {
+            nomePianoCompleto = `Doc. ${numDoc}`;
+          } else {
+            nomePianoCompleto = file.name.replace(/\.[^/.]+$/, '');
+          }
+
+          // 2. Estrazione Rate
+          let rateEstratte = [];
+          const pianoId = 'piano_' + Date.now();
+
+          // Rata 1
+          const dateR1Match = fullText.match(/(?:Scadenza\s*Prima\s*Rata|Prima\s*Rata).*?(\d{2}[\/\.]\d{2}[\/\.]\d{4})/i) || fullText.match(/(\d{2}[\/\.]\d{2}[\/\.]\d{4})/);
+          const capR1Match = fullText.match(/Quota\s*capitale\s*€?\s*([\d\.',]+)/i);
+          const moraR1Match = fullText.match(/Quota\s*interessi\s*di\s*mora\s*€?\s*([\d\.',]+)/i);
+          const intR1Match = fullText.match(/Quota\s*interessi\s*di\s*rateizzazione\s*€?\s*([\d\.',]+)/i);
+          const notifR1Match = fullText.match(/Diritti\s*di\s*notifica.*?[€\s]+([\d\.',]+)/i);
+          const totR1Match = fullText.match(/(?:Importo\s*Prima\s*Rata|Prima\s*Rata).*?[€\s]+([\d\.',]+)/i);
+
+          if (dateR1Match && capR1Match) {
+            const cap1 = parseValore(capR1Match[1]);
+            const mora1 = moraR1Match ? parseValore(moraR1Match[1]) : 0;
+            const int1 = intR1Match ? parseValore(intR1Match[1]) : 0;
+            const notif1 = notifR1Match ? parseValore(notifR1Match[1]) : 0;
+            const tot1 = totR1Match ? parseValore(totR1Match[1]) : (cap1 + mora1 + int1 + notif1);
+
+            rateEstratte.push({
+              id: `${pianoId}_rata_1`,
+              pianoId: pianoId,
+              pianoNome: nomePianoCompleto,
+              numeroRata: 1,
+              titolo: `${nomePianoCompleto} - Rata 1`,
+              categoria: 'Rateizzazione Equitalia',
+              importo: tot1,
+              quotaCapitale: cap1,
+              quotaMora: mora1,
+              quotaInteressi: int1,
+              quotaNotifica: notif1,
+              scadenza: parseDataAdER(dateR1Match[1].replace(/\./g, '/')),
+              pagato: false,
+              dataPagamento: null,
+              banca: null,
+              note: notif1 > 0 ? `Include notifica € ${notif1.toFixed(2)}` : 'Rata 1'
+            });
+          }
+
+          // Rate 2..N
+          const regexRiga = /\b([2-9]|[1-9]\d{1,2})\s+(\d{2}[\/\.]\d{2}[\/\.]\d{4})\s*€?\s*([\d\.',]+)\s*€?\s*([\d\.',]+)\s*€?\s*([\d\.',]+)(?:\s*€?\s*[\d\.',]+)?\s*€?\s*([\d\.',]+)/g;
+          let m;
+          while ((m = regexRiga.exec(fullText)) !== null) {
+            const num = parseInt(m[1]);
+            const dataStr = parseDataAdER(m[2].replace(/\./g, '/'));
+            const cap = parseValore(m[3]);
+            const mora = parseValore(m[4]);
+            const inter = parseValore(m[5]);
+            const tot = parseValore(m[6]);
+
+            rateEstratte.push({
+              id: `${pianoId}_rata_${num}`,
+              pianoId: pianoId,
+              pianoNome: nomePianoCompleto,
+              numeroRata: num,
+              titolo: `${nomePianoCompleto} - Rata ${num}`,
+              categoria: 'Rateizzazione Equitalia',
+              importo: tot,
+              quotaCapitale: cap,
+              quotaMora: mora,
+              quotaInteressi: inter,
+              quotaNotifica: 0.00,
+              scadenza: dataStr,
+              pagato: false,
+              dataPagamento: null,
+              banca: null,
+              note: `Rata ufficiale ${num}`
+            });
+          }
+
+          if (rateEstratte.length > 0) {
+            let items = getItems();
+            items = items.concat(rateEstratte);
+            filtroPianoAttivo = pianoId;
+            saveItems(items);
+            statusEl.textContent = `✅ Importazione completata! Caricate ${rateEstratte.length} rate per "${nomePianoCompleto}".`;
+            alert(`🎉 CARTELLA IMPORTATA IN AUTOMATICO AL 100%!\n\nIdentificativo: ${nomePianoCompleto}\nTotale Rate: ${rateEstratte.length}\n\nTutte le rate sono pronte nello scadenzario.`);
+          } else {
+            alert("Il testo del PDF è stato estratto ma la tabella ha una struttura differente. Invia il file qui in chat per caricarlo all'istante!");
+            statusEl.style.display = 'none';
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Errore nella lettura automatica del PDF: " + err.message);
+          statusEl.style.display = 'none';
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  });
+
+  window.importaDaTestoManuale = function() {
+    const nome = document.getElementById('importNomeManuale').value.trim() || 'Cartella AdER';
+    const rawText = document.getElementById('importTesto').value.trim();
+    if (!rawText) {
+      alert("Incolla prima i dati della tabella.");
+      return;
+    }
+    const righe = rawText.split('\n').map(r => r.trim()).filter(r => r.length > 0);
+    const pianoId = 'piano_' + Date.now();
+    let importati = [];
+
+    righe.forEach(riga => {
+      if (riga.toLowerCase().includes('capitale') || riga.toLowerCase().includes('quota') || riga.toLowerCase().includes('data')) return;
+      let sep = '\t';
+      if (riga.includes(';')) sep = ';';
+      else if (!riga.includes('\t') && riga.includes(',')) sep = ',';
+
+      const cols = riga.split(sep).map(c => c.trim());
+      if (cols.length >= 5) {
+        const numRata = parseInt(cols[0]) || (importati.length + 1);
+        const dataScad = parseDataAdER(cols[1]);
+        const cap = parseValore(cols[2]);
+        const mora = parseValore(cols[3]);
+        const inter = parseValore(cols[4]);
+        const notifica = (cols.length >= 7) ? parseValore(cols[5]) : (numRata === 1 ? parseValore(cols[5] || 0) : 0);
+        const tot = (cols.length >= 7) ? parseValore(cols[6]) : parseValore(cols[5] || (cap + mora + inter + notifica));
+
+        importati.push({
+          id: `${pianoId}_rata_${numRata}`,
+          pianoId: pianoId,
+          pianoNome: nome,
+          numeroRata: numRata,
+          titolo: `${nome} - Rata ${numRata}`,
+          categoria: 'Rateizzazione Equitalia',
+          importo: tot,
+          quotaCapitale: cap,
+          quotaMora: mora,
+          quotaInteressi: inter,
+          quotaNotifica: notifica,
+          scadenza: dataScad,
+          pagato: false,
+          dataPagamento: null,
+          banca: null,
+          note: `Rata ${numRata}`
+        });
+      }
+    });
+
+    if (importati.length > 0) {
+      let items = getItems();
+      items = items.concat(importati);
+      filtroPianoAttivo = pianoId;
+      saveItems(items);
+      alert(`🎉 Salavate ${importati.length} rate per "${nome}"!`);
+    }
+  };
+
   // CARICAMENTO INIZIALE O RICARICA PDF UFFICIALE AdER ISTANZA 572996
   window.caricaPianoUfficiale572996 = function() {
     let items = getItems();
@@ -1057,160 +1272,6 @@
     reader.readAsText(file);
     event.target.value = '';
   };
-
-  // LETTURA DIRETTA ED ELABORAZIONE FILE PDF (O CSV) CON NOME COMPLETO
-  document.getElementById('importPdfFile').addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.name.toLowerCase().endsWith('.pdf')) {
-      if (typeof pdfjsLib === 'undefined') {
-        alert("Libreria PDF non caricata. Verifica la connessione a Internet.");
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = async function(evt) {
-        try {
-          const typedArray = new Uint8Array(evt.target.result);
-          const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
-          let fullText = '';
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const content = await page.getTextContent();
-            const pageStrings = content.items.map(it => it.str).join(' ');
-            fullText += pageStrings + '\n';
-          }
-
-          if (!fullText.trim()) {
-            alert("⚠️ Questo PDF è una scansione immagine. Invia il file PDF qui nella nostra chat e ti preparerò subito il blocco dati pronto!");
-            return;
-          }
-
-          // Riconoscimento completo: Numero Documento + Istanza + Data
-          const docMatch = fullText.match(/\b014\d{13,17}\b/) || fullText.match(/\b\d{16,20}\b/);
-          const istanzaMatch = fullText.match(/istanza\s*(\d+)/i);
-          const dataIstanzaMatch = fullText.match(/istanza\s*\d+\s*del\s*(\d{2}\/\d{2}\/\d{4})/i) || fullText.match(/del\s*(\d{2}\/\d{2}\/\d{4})/i);
-
-          let nomePiano = '';
-          const docPart = docMatch ? `Doc. ${docMatch[0]}` : file.name.replace(/\.[^/.]+$/, '');
-          const istanzaPart = istanzaMatch ? ` - Istanza ${istanzaMatch[1]}` : '';
-          const dataPart = dataIstanzaMatch ? ` del ${dataIstanzaMatch[1]}` : '';
-
-          nomePiano = `${docPart}${istanzaPart}${dataPart}`;
-          document.getElementById('importNomePiano').value = nomePiano;
-
-          let righeEstratte = [];
-          const dateR1Match = fullText.match(/(?:Scadenza\s*Prima\s*Rata|Prima\s*Rata).*?(\d{2}\/\d{2}\/\d{4})/i) || fullText.match(/(\d{2}\/\d{2}\/\d{4})/);
-          const capR1Match = fullText.match(/Quota\s*capitale\s*€?\s*([\d\.,]+)/i);
-          const moraR1Match = fullText.match(/Quota\s*interessi\s*di\s*mora\s*€?\s*([\d\.,]+)/i);
-          const intR1Match = fullText.match(/Quota\s*interessi\s*di\s*rateizzazione\s*€?\s*([\d\.,]+)/i);
-          const notifR1Match = fullText.match(/Diritti\s*di\s*notifica.*?[€\s]+([\d\.,]+)/i);
-          const totR1Match = fullText.match(/(?:Importo\s*Prima\s*Rata|Prima\s*Rata).*?[€\s]+([\d\.,]+)/i);
-
-          if (dateR1Match && capR1Match) {
-            righeEstratte.push(`1;${dateR1Match[1]};${capR1Match[1]};${moraR1Match ? moraR1Match[1] : '0'};${intR1Match ? intR1Match[1] : '0'};${notifR1Match ? notifR1Match[1] : '0'};${totR1Match ? totR1Match[1] : ''}`);
-          }
-
-          const regexRiga = /\b([2-9]|[1-9]\d{1,2})\s+(\d{2}\/\d{2}\/\d{4})\s+€?\s*([\d\.,]+)\s+€?\s*([\d\.,]+)\s+€?\s*([\d\.,]+)(?:\s+€?\s*([\d\.,]+))?\s+€?\s*([\d\.,]+)/g;
-          let m;
-          while ((m = regexRiga.exec(fullText)) !== null) {
-            const num = m[1];
-            const data = m[2];
-            const cap = m[3];
-            const mora = m[4];
-            const inter = m[5];
-            const tot = m[7] || m[6];
-            righeEstratte.push(`${num};${data};${cap};${mora};${inter};0.00;${tot}`);
-          }
-
-          if (righeEstratte.length > 0) {
-            document.getElementById('importTesto').value = "Rata;Data;Capitale;Mora;Interessi;Notifica;Totale\n" + righeEstratte.join('\n');
-            alert(`✅ PDF analizzato con successo!\nRiconosciute ${righeEstratte.length} rate per:\n"${nomePiano}".\n\nClicca su 'Salva Nuova Cartella' per aggiungerla.`);
-          } else {
-            alert("Il testo del PDF è stato estratto ma la tabella ha una disposizione non standard. Invia il file qui in chat per caricarlo all'istante.");
-          }
-        } catch (err) {
-          console.error(err);
-          alert("Errore nella decodifica del PDF: " + err.message);
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        document.getElementById('importTesto').value = evt.target.result;
-      };
-      reader.readAsText(file);
-    }
-  });
-
-  document.getElementById('importForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const nomePiano = document.getElementById('importNomePiano').value.trim();
-    const rawText = document.getElementById('importTesto').value.trim();
-
-    if (!rawText) {
-      alert("Seleziona prima un file PDF o inserisci i dati della tabella.");
-      return;
-    }
-
-    const righe = rawText.split('\n').map(r => r.trim()).filter(r => r.length > 0);
-    const pianoId = 'piano_' + Date.now();
-    let importati = [];
-
-    righe.forEach(riga => {
-      if (riga.toLowerCase().includes('capitale') || riga.toLowerCase().includes('quota') || riga.toLowerCase().includes('data')) return;
-
-      let sep = '\t';
-      if (riga.includes(';')) sep = ';';
-      else if (!riga.includes('\t') && riga.includes(',')) sep = ',';
-
-      const cols = riga.split(sep).map(c => c.trim());
-      if (cols.length >= 5) {
-        const numRata = parseInt(cols[0]) || (importati.length + 1);
-        const dataScad = parseDataAdER(cols[1]);
-        const cap = parseValore(cols[2]);
-        const mora = parseValore(cols[3]);
-        const inter = parseValore(cols[4]);
-        const notifica = (cols.length >= 7) ? parseValore(cols[5]) : (numRata === 1 ? parseValore(cols[5] || 0) : 0);
-        const tot = (cols.length >= 7) ? parseValore(cols[6]) : parseValore(cols[5] || (cap + mora + inter + notifica));
-
-        importati.push({
-          id: `${pianoId}_rata_${numRata}`,
-          pianoId: pianoId,
-          pianoNome: nomePiano,
-          numeroRata: numRata,
-          titolo: `${nomePiano} - Rata ${numRata}`,
-          categoria: 'Rateizzazione Equitalia',
-          importo: tot,
-          quotaCapitale: cap,
-          quotaMora: mora,
-          quotaInteressi: inter,
-          quotaNotifica: notifica,
-          scadenza: dataScad,
-          pagato: false,
-          dataPagamento: null,
-          banca: null,
-          note: numRata === 1 && notifica > 0 ? `Include notifica € ${notifica.toFixed(2)}` : `Rata ${numRata}`
-        });
-      }
-    });
-
-    if (importati.length === 0) {
-      alert("Formato dati non riconosciuto.");
-      return;
-    }
-
-    let items = getItems();
-    items = items.concat(importati);
-    filtroPianoAttivo = pianoId;
-    saveItems(items);
-
-    document.getElementById('importTesto').value = '';
-    document.getElementById('importPdfFile').value = '';
-    alert(`🎉 Importate con successo ${importati.length} rate per la nuova cartella:\n"${nomePiano}"!`);
-  });
 
   // GESTIONE PAGAMENTO CON DATA E BANCA
   window.avviaPagamento = function(id) {
@@ -1482,15 +1543,22 @@
     URL.revokeObjectURL(url);
   });
 
-  // AVVIO E AGGIORNAMENTO AUTOMATICO NOME
+  // AVVIO E AUTO-AGGIORNAMENTO NOMI ISTANZE ESISTENTI
   let currentItems = getItems();
   let updatedAny = false;
 
-  // Aggiorna retroattivamente il nome dell'Istanza 572996 mantenendo i pagamenti intatti
   currentItems.forEach(it => {
+    // 1. Allinea Cartella 572996
     if (it.pianoId === 'piano_572996' && it.pianoNome !== NOME_PIANO_572996_UFFICIALE) {
       it.pianoNome = NOME_PIANO_572996_UFFICIALE;
       it.titolo = `${NOME_PIANO_572996_UFFICIALE} - Rata ${it.numeroRata}/84`;
+      updatedAny = true;
+    }
+    // 2. Allinea Cartella 01420250038532163 in automatico con Istanza n. 518666 del 22/10/2025
+    if (it.pianoNome && it.pianoNome.includes('01420250038532163') && !it.pianoNome.includes('Istanza n.')) {
+      const nuovoNomeCartella2 = 'Doc. 01420250038532163 - Istanza n. 518666 del 22/10/2025';
+      it.pianoNome = nuovoNomeCartella2;
+      it.titolo = it.titolo.replace(/AdER\s*01420250038532163/i, nuovoNomeCartella2);
       updatedAny = true;
     }
   });
