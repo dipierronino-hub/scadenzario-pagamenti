@@ -3,28 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scadenzario Pagamenti & Rateizzazioni</title>
+  <title>Scadenzario & Piani Rateali AdER / Banche</title>
   <style>
     :root {
       --primary: #0284c7;
       --primary-dark: #0369a1;
       --accent: #4f46e5;
       --accent-hover: #4338ca;
-      --bg: #f1f5f9;
+      --bg: #f8fafc;
       --card-bg: #ffffff;
       --text: #0f172a;
       --muted: #64748b;
       --border: #e2e8f0;
-      --danger: #dc2626;
-      --danger-bg: #fef2f2;
-      --warning: #d97706;
-      --warning-bg: #fffbeb;
-      --success: #16a34a;
-      --success-bg: #f0fdf4;
+      
+      /* Colori richiesti */
+      --col-scaduto: #dc2626;     /* ROSSO */
+      --bg-scaduto: #fee2e2;
+      --col-dapagare: #b45309;    /* GIALLO / AMBRA */
+      --bg-dapagare: #fef3c7;
+      --border-dapagare: #fde68a;
+      --col-pagato: #1d4ed8;      /* BLU */
+      --bg-pagato: #dbeafe;
+      --border-pagato: #bfdbfe;
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); margin: 0; padding: 24px; }
-    .container { max-width: 1100px; margin: 0 auto; }
+    .container { max-width: 1300px; margin: 0 auto; }
     
     header { margin-bottom: 24px; }
     h1 { margin: 0 0 6px 0; font-size: 1.7rem; }
@@ -61,7 +65,17 @@
       gap: 14px;
       align-items: flex-end;
     }
-    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #334155; }
+    .sub-box {
+      grid-column: 1 / -1;
+      background: #f1f5f9;
+      border: 1px dashed #cbd5e1;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+    .sub-box h4 { margin: 0 0 12px 0; color: #334155; font-size: 0.95rem; }
+
+    label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 5px; color: #334155; }
     input, select {
       width: 100%;
       padding: 9px 12px;
@@ -73,13 +87,13 @@
     input:focus, select:focus { border-color: var(--primary); }
 
     .btn {
-      padding: 10px 16px;
+      padding: 9px 14px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       font-weight: 600;
-      font-size: 0.9rem;
-      transition: opacity 0.2s;
+      font-size: 0.88rem;
+      transition: opacity 0.2s, background 0.2s;
     }
     .btn:hover { opacity: 0.9; }
     .btn-primary { background: var(--primary); color: white; width: 100%; }
@@ -87,8 +101,11 @@
     .btn-accent:hover { background: var(--accent-hover); }
     .btn-outline { background: transparent; border: 1px solid var(--border); color: #334155; }
     .btn-outline.active { background: #e0f2fe; border-color: var(--primary); color: var(--primary-dark); font-weight: 700; }
-    .btn-success { background: var(--success); color: white; }
-    .btn-small { padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; }
+    .btn-pay { background: #1d4ed8; color: white; }
+    .btn-reopen { background: #64748b; color: white; }
+    .btn-edit { background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; }
+    .btn-edit:hover { background: #e2e8f0; }
+    .btn-small { padding: 5px 9px; font-size: 0.78rem; border-radius: 5px; }
 
     .tabs { display: flex; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
     .tab-btn { background: none; border: none; font-size: 1rem; font-weight: 600; color: var(--muted); cursor: pointer; padding: 6px 12px; border-radius: 6px; }
@@ -104,56 +121,132 @@
     }
     .filters { display: flex; gap: 8px; }
 
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
-    th { background: #f8fafc; padding: 12px; color: #475569; font-weight: 600; border-bottom: 2px solid var(--border); }
-    td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
+    th { background: #f8fafc; padding: 12px 10px; color: #475569; font-weight: 600; border-bottom: 2px solid var(--border); }
+    td { padding: 12px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tr:hover td { background: #f8fafc; }
 
+    /* BORDO LATERALE DI STATO */
+    tr.row-scaduta { border-left: 5px solid var(--col-scaduto); }
+    tr.row-dapagare { border-left: 5px solid #eab308; }
+    tr.row-pagata { border-left: 5px solid var(--col-pagato); }
+    tr.row-pagata td { color: #64748b; }
+
+    /* BADGE COLORATI */
     .badge {
       display: inline-block;
       padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 0.75rem;
+      border-radius: 20px;
+      font-size: 0.73rem;
       font-weight: 700;
       text-transform: uppercase;
     }
-    .badge-scaduto { background: var(--danger-bg); color: var(--danger); }
-    .badge-imminente { background: var(--warning-bg); color: var(--warning); }
-    .badge-attesa { background: #f1f5f9; color: #475569; }
-    .badge-pagato { background: var(--success-bg); color: var(--success); text-decoration: line-through; }
-    .row-pagata td { color: #94a3b8; }
+    .badge-scaduto { background: var(--bg-scaduto); color: var(--col-scaduto); border: 1px solid #fca5a5; }
+    .badge-dapagare { background: var(--bg-dapagare); color: var(--col-dapagare); border: 1px solid var(--border-dapagare); }
+    .badge-pagato { background: var(--bg-pagato); color: var(--col-pagato); border: 1px solid var(--border-pagato); }
+
+    .badge-banca {
+      display: inline-block;
+      background: #eff6ff;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+    }
+
+    .tag-breakdown {
+      display: inline-block;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      color: #475569;
+      font-size: 0.72rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 4px;
+    }
+
     .empty-state { text-align: center; padding: 35px; color: #94a3b8; }
+
+    /* Toast Undo */
+    #toastBar {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0f172a;
+      color: white;
+      padding: 14px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      display: none;
+      align-items: center;
+      gap: 16px;
+      z-index: 1000;
+      font-size: 0.95rem;
+    }
+    #toastUndoBtn {
+      background: #38bdf8;
+      color: #0f172a;
+      font-weight: 700;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    /* Modal Backdrop */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+    .modal-box {
+      background: white;
+      width: 100%;
+      max-width: 620px;
+      border-radius: 10px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body>
 
 <div class="container">
   <header>
-    <h1>Scadenzario & Gestione Rateizzazioni</h1>
-    <p>Monitora scadenze di Equitalia, bolli, polizze assicurative e piani di rientro rateali.</p>
+    <h1>Scadenzario & Piani Rateali AdER / Banche</h1>
+    <p>Monitoraggio scadenze: <strong>Giallo</strong> (Da Pagare), <strong>Rosso</strong> (Scaduto), <strong>Blu</strong> (Pagato con data e conto di addebito).</p>
   </header>
 
   <!-- Cruscotto Indicatori -->
   <div class="kpi-grid">
     <div class="kpi-card">
-      <div class="kpi-title">Totale Residuo da Saldare</div>
-      <div class="kpi-val" id="kpiDaSaldare" style="color: var(--danger);">€ 0,00</div>
+      <div class="kpi-title">Residuo da Saldare</div>
+      <div class="kpi-val" id="kpiDaSaldare" style="color: var(--col-dapagare);">€ 0,00</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-title">Scadenze Urgenti / Scadute</div>
-      <div class="kpi-val" id="kpiUrgenti" style="color: var(--warning);">0</div>
+      <div class="kpi-title">Rate / Scadenze Scadute</div>
+      <div class="kpi-val" id="kpiScaduti" style="color: var(--col-scaduto);">0</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-title">Totale Già Saldato</div>
-      <div class="kpi-val" id="kpiPagato" style="color: var(--success);">€ 0,00</div>
+      <div class="kpi-title">Totale Effettivamente Saldato</div>
+      <div class="kpi-val" id="kpiPagato" style="color: var(--col-pagato);">€ 0,00</div>
     </div>
   </div>
 
   <!-- Scheda Inserimento / Generatore -->
   <div class="card">
     <div class="tabs">
-      <button class="tab-btn active" id="tabSingolaBtn" onclick="mostraPannello('singola')">➕ Inserisci Singola Scadenza</button>
-      <button class="tab-btn" id="tabRatealeBtn" onclick="mostraPannello('rateale')">⚡ Genera Piano Rateale (es. 84 rate Equitalia)</button>
+      <button class="tab-btn active" id="tabSingolaBtn" onclick="mostraPannello('singola')">➕ Inserisci Singola Spesa (Bollo, Assicurazione, ecc.)</button>
+      <button class="tab-btn" id="tabRatealeBtn" onclick="mostraPannello('rateale')">⚡ Generatore Rateizzazione (es. 84 rate Equitalia)</button>
     </div>
 
     <!-- 1. Form Singola Scadenza -->
@@ -162,7 +255,7 @@
         <div class="form-grid">
           <div style="grid-column: span 2;">
             <label for="titolo">Descrizione Pagamento</label>
-            <input type="text" id="titolo" placeholder="Es. Bollo Auto, Assicurazione Q5" required>
+            <input type="text" id="titolo" placeholder="Es. Bollo Auto, Polizza Assicurativa" required>
           </div>
           <div>
             <label for="categoria">Categoria</label>
@@ -175,7 +268,7 @@
             </select>
           </div>
           <div>
-            <label for="importo">Importo (€)</label>
+            <label for="importo">Importo Scadenza (€)</label>
             <input type="number" id="importo" step="0.01" min="0" placeholder="0.00" required>
           </div>
           <div>
@@ -184,10 +277,10 @@
           </div>
           <div>
             <label for="note">Note / Riferimento</label>
-            <input type="text" id="note" placeholder="Es. Targa, protocollo">
+            <input type="text" id="note" placeholder="Es. Targa veicolo o protocollo">
           </div>
           <div>
-            <button type="submit" class="btn btn-primary">Salva Scadenza</button>
+            <button type="submit" class="btn btn-primary">Salva Spesa</button>
           </div>
         </div>
       </form>
@@ -196,17 +289,17 @@
     <!-- 2. Form Generatore Piano Rateale -->
     <div id="panelRateale" style="display: none;">
       <p style="color: #475569; font-size: 0.9rem; margin-top: 0; margin-bottom: 16px;">
-        Compila i campi sottostanti: verranno create automaticamente tutte le rate con cadenza mensile.
+        Inserisci i dati della cartella: verranno create in blocco tutte le rate mensili associando la suddivisione degli importi richiesta.
       </p>
       <form id="pianoRatealeForm">
         <div class="form-grid">
           <div style="grid-column: span 2;">
-            <label for="pianoNome">Nome Piano / Riferimento Cartella</label>
-            <input type="text" id="pianoNome" placeholder="Es. Rateizzazione Cartella AdER n. 2026/123" required>
+            <label for="pianoNome">Identificativo Piano / N. Cartella AdER</label>
+            <input type="text" id="pianoNome" placeholder="Es. Cartella n. 0142026000123" required>
           </div>
           <div>
-            <label for="totaleRate">Numero Totale Rate</label>
-            <input type="number" id="totaleRate" value="84" min="2" max="120" required>
+            <label for="totaleRate">Numero Rate</label>
+            <input type="number" id="totaleRate" value="84" min="2" max="120" required oninput="ricalcolaTotaleRateizzato()">
           </div>
           <div>
             <label for="primaScadenza">Data Scadenza 1ª Rata</label>
@@ -214,14 +307,38 @@
           </div>
           <div>
             <label for="importoPrimaRata">Importo 1ª Rata (€)</label>
-            <input type="number" id="importoPrimaRata" step="0.01" min="0" placeholder="Es. 250.00" required>
+            <input type="number" id="importoPrimaRata" step="0.01" min="0" placeholder="Es. 250.00" required oninput="ricalcolaTotaleRateizzato()">
           </div>
           <div>
-            <label for="importoAltreRate">Importo Altre Rate (€)</label>
-            <input type="number" id="importoAltreRate" step="0.01" min="0" placeholder="Es. 180.00" required>
+            <label for="importoAltreRate">Importo Altre 83 Rate (€)</label>
+            <input type="number" id="importoAltreRate" step="0.01" min="0" placeholder="Es. 180.00" required oninput="ricalcolaTotaleRateizzato()">
           </div>
-          <div>
-            <button type="submit" class="btn btn-accent">⚡ Genera Tutte le Rate</button>
+
+          <!-- Dettaglio Quote Cartella -->
+          <div class="sub-box">
+            <h4>📊 Dettaglio Suddivisione Importi della Rateizzazione (da prospetto AdER)</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+              <div>
+                <label for="pianoTotaleRateizzato">Importo Complessivo Rateizzato (€)</label>
+                <input type="number" id="pianoTotaleRateizzato" step="0.01" placeholder="Totale piano" required>
+              </div>
+              <div>
+                <label for="pianoRuolo">di cui Iscritto a Ruolo (€)</label>
+                <input type="number" id="pianoRuolo" step="0.01" placeholder="Tributi / Sanzioni" value="0.00">
+              </div>
+              <div>
+                <label for="pianoMora">di cui Interessi di Mora (€)</label>
+                <input type="number" id="pianoMora" step="0.01" placeholder="Interessi di mora" value="0.00">
+              </div>
+              <div>
+                <label for="pianoOneri">di cui Oneri di Riscossione (€)</label>
+                <input type="number" id="pianoOneri" step="0.01" placeholder="Diritti / Oneri AdER" value="0.00">
+              </div>
+            </div>
+          </div>
+
+          <div style="grid-column: 1 / -1; margin-top: 8px;">
+            <button type="submit" class="btn btn-accent" style="width: 100%; padding: 12px;">⚡ Genera Piano Rateale Completo</button>
           </div>
         </div>
       </form>
@@ -233,11 +350,11 @@
     <div class="toolbar">
       <div class="filters">
         <button class="btn btn-outline active" onclick="setFiltro('tutti')">Tutti</button>
-        <button class="btn btn-outline" onclick="setFiltro('in_sospeso')">Da Pagare</button>
-        <button class="btn btn-outline" onclick="setFiltro('pagati')">Completati</button>
+        <button class="btn btn-outline" onclick="setFiltro('in_sospeso')">Da Pagare (Giallo / Rosso)</button>
+        <button class="btn btn-outline" onclick="setFiltro('pagati')">Pagati (Blu)</button>
       </div>
       <div>
-        <button id="exportCsv" class="btn btn-success">📥 Esporta Excel (CSV)</button>
+        <button id="exportCsv" class="btn btn-primary" style="width: auto;">📥 Esporta Excel Completo (CSV)</button>
       </div>
     </div>
 
@@ -245,22 +362,163 @@
       <thead>
         <tr>
           <th>Stato</th>
-          <th>Scadenza</th>
-          <th>Descrizione</th>
+          <th>Scadenza Limite</th>
+          <th>Effettivo Pagamento</th>
+          <th>Banca / Addebito</th>
+          <th>Descrizione Rata / Spesa</th>
           <th>Categoria</th>
           <th>Importo</th>
+          <th>Dettaglio Cartella</th>
           <th>Note</th>
           <th style="text-align: right;">Azioni</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
     </table>
-    <div id="emptyMsg" class="empty-state">Nessuna scadenza inserita.</div>
+    <div id="emptyMsg" class="empty-state">Nessuna voce presente nello scadenzario.</div>
   </div>
+</div>
+
+<!-- Modal Conferma Rapida Pagamento con Data e Banca -->
+<div class="modal-backdrop" id="payModal">
+  <div class="modal-box" style="max-width: 460px;">
+    <h3 style="margin-top:0; color: #1d4ed8;">🔵 Registra Pagamento Effettuato</h3>
+    <p id="payModalTitolo" style="font-size: 0.9rem; color: #475569; margin-bottom: 16px;"></p>
+    <form id="payConfirmForm">
+      <input type="hidden" id="payItemId">
+      
+      <div style="margin-bottom: 14px;">
+        <label for="payDataEffettiva">Data in cui hai pagato:</label>
+        <input type="date" id="payDataEffettiva" required>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label for="payBanca">Come è stato pagato (Banca / Conto):</label>
+        <select id="payBanca" required>
+          <option value="BCC BARI E TARANTO">BCC BARI E TARANTO</option>
+          <option value="BCC CASTELLANA GROTTE">BCC CASTELLANA GROTTE</option>
+          <option value="BANCA POPOLARE PUGLIESE">BANCA POPOLARE PUGLIESE</option>
+          <option value="BPPB">BPPB</option>
+          <option value="Altro / Cassa">Altro / Cassa</option>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-outline" onclick="chiudiPayModal()">Annulla</button>
+        <button type="submit" class="btn btn-pay" style="width: auto;">Conferma Pagamento</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Modifica Completa -->
+<div class="modal-backdrop" id="editModal">
+  <div class="modal-box">
+    <h3 style="margin-top:0; margin-bottom: 16px;">✏️ Modifica Dettagli Scadenza</h3>
+    <form id="editForm">
+      <input type="hidden" id="editId">
+      
+      <div style="margin-bottom: 12px;">
+        <label>Descrizione / Rata</label>
+        <input type="text" id="editTitolo" required>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+        <div style="flex: 1;">
+          <label>Categoria</label>
+          <select id="editCategoria">
+            <option value="Bollo Auto">Bollo Auto</option>
+            <option value="Assicurazione">Assicurazione</option>
+            <option value="Rateizzazione Equitalia">Rateizzazione Equitalia / AdER</option>
+            <option value="F24 / Tributi">F24 / Tributi</option>
+            <option value="Altro">Altro</option>
+          </select>
+        </div>
+        <div style="flex: 1;">
+          <label>Importo Rata (€)</label>
+          <input type="number" id="editImporto" step="0.01" required>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+        <div style="flex: 1;">
+          <label>Data di Scadenza Limite</label>
+          <input type="date" id="editScadenza" required>
+        </div>
+        <div style="flex: 1;">
+          <label>Stato Pagamento</label>
+          <select id="editStato" onchange="toggleCampiPagamentoEdit()">
+            <option value="false">🟡 Da Pagare</option>
+            <option value="true">🔵 Pagato</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Campi pagamento (visibili solo se pagato) -->
+      <div id="boxEditDatiPagamento" style="display: flex; gap: 12px; margin-bottom: 12px; background: #eff6ff; padding: 12px; border-radius: 6px; border: 1px solid #bfdbfe;">
+        <div style="flex: 1;">
+          <label style="color: #1d4ed8;">Data Effettivo Pagamento</label>
+          <input type="date" id="editDataPagamento">
+        </div>
+        <div style="flex: 1;">
+          <label style="color: #1d4ed8;">Banca di Addebito</label>
+          <select id="editBanca">
+            <option value="">-- Seleziona Banca --</option>
+            <option value="BCC BARI E TARANTO">BCC BARI E TARANTO</option>
+            <option value="BCC CASTELLANA GROTTE">BCC CASTELLANA GROTTE</option>
+            <option value="BANCA POPOLARE PUGLIESE">BANCA POPOLARE PUGLIESE</option>
+            <option value="BPPB">BPPB</option>
+            <option value="Altro / Cassa">Altro / Cassa</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Suddivisione Importi se Cartella Equitalia -->
+      <div class="sub-box" style="margin-bottom: 16px;">
+        <h4 style="margin-top: 0;">Suddivisione Totale Cartella</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label>Totale Rateizzato (€)</label>
+            <input type="number" id="editTotRateizzato" step="0.01">
+          </div>
+          <div>
+            <label>di cui Iscritto a Ruolo (€)</label>
+            <input type="number" id="editRuolo" step="0.01">
+          </div>
+          <div>
+            <label>di cui Interessi di Mora (€)</label>
+            <input type="number" id="editMora" step="0.01">
+          </div>
+          <div>
+            <label>di cui Oneri Riscossione (€)</label>
+            <input type="number" id="editOneri" step="0.01">
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 18px;">
+        <label>Note / Riferimento</label>
+        <input type="text" id="editNote">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-outline" onclick="chiudiModal()">Annulla</button>
+        <button type="submit" class="btn btn-primary" style="width: auto;">Salva Correzioni</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast Ripristino Immediato -->
+<div id="toastBar">
+  <span id="toastMsg">Aggiornamento completato!</span>
+  <button id="toastUndoBtn" onclick="annullaUltimaAzione()">↩ Annulla subito</button>
 </div>
 
 <script>
   let filtroAttivo = 'tutti';
+  let ultimoStatoPrecedente = null;
+  let toastTimer = null;
 
   function getItems() {
     return JSON.parse(localStorage.getItem('scadenziario_items') || '[]');
@@ -272,7 +530,14 @@
   }
 
   function formatEuro(val) {
+    if (!val && val !== 0) return "-";
     return Number(val).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
+  }
+
+  function formatDataDisplay(dStr) {
+    if (!dStr) return "-";
+    const [y, m, d] = dStr.split('-');
+    return `${d}/${m}/${y}`;
   }
 
   function formatDataIso(d) {
@@ -282,14 +547,11 @@
     return `${y}-${m}-${day}`;
   }
 
-  // Aggiunge N mesi mantenendo il giorno corretto
   function aggiungiMesi(dataBase, mesiDaAggiungere) {
     const giornoIniziale = dataBase.getDate();
     const d = new Date(dataBase.getTime());
     d.setDate(1);
     d.setMonth(d.getMonth() + mesiDaAggiungere);
-    
-    // Gestione fine mese se il mese d'arrivo ha meno giorni
     const maxGiorniNelMese = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
     d.setDate(Math.min(giornoIniziale, maxGiorniNelMese));
     return d;
@@ -302,8 +564,26 @@
     document.getElementById('tabRatealeBtn').classList.toggle('active', tipo === 'rateale');
   }
 
+  function ricalcolaTotaleRateizzato() {
+    const nRate = parseInt(document.getElementById('totaleRate').value) || 0;
+    const r1 = parseFloat(document.getElementById('importoPrimaRata').value) || 0;
+    const rAltre = parseFloat(document.getElementById('importoAltreRate').value) || 0;
+    if (nRate >= 2) {
+      const tot = r1 + ((nRate - 1) * rAltre);
+      document.getElementById('pianoTotaleRateizzato').value = tot.toFixed(2);
+    }
+  }
+
+  // CALCOLO STATO E COLORI
   function getStatusInfo(scadenzaStr, isPagato) {
-    if (isPagato) return { label: 'Pagato', classe: 'badge-pagato' };
+    if (isPagato) {
+      return { 
+        label: '🔵 PAGATO', 
+        classeBadge: 'badge-pagato', 
+        classeRiga: 'row-pagata',
+        tipo: 'pagato' 
+      };
+    }
 
     const oggi = new Date();
     oggi.setHours(0,0,0,0);
@@ -313,12 +593,21 @@
     const diffDays = Math.ceil((dataScad - oggi) / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
-      return { label: `Scaduto (${Math.abs(diffDays)} gg fa)`, classe: 'badge-scaduto', isUrgent: true };
-    } else if (diffDays <= 15) {
-      return { label: diffDays === 0 ? 'Scade Oggi' : `Scade in ${diffDays} gg`, classe: 'badge-imminente', isUrgent: true };
-    } else {
-      return { label: 'Regolare', classe: 'badge-attesa', isUrgent: false };
-    }
+      return { 
+        label: `🔴 SCADUTO (${Math.abs(diffDays)} gg fa)`, 
+        classeBadge: 'badge-scaduto', 
+        classeRiga: 'row-scaduta',
+        tipo: 'scaduto' 
+      };
+    } 
+    
+    const labelTesto = diffDays === 0 ? '🟡 SCADE OGGI' : `🟡 DA PAGARE (${diffDays} gg)`;
+    return { 
+      label: labelTesto, 
+      classeBadge: 'badge-dapagare', 
+      classeRiga: 'row-dapagare',
+      tipo: 'dapagare' 
+    };
   }
 
   function render() {
@@ -326,7 +615,6 @@
     const tableBody = document.getElementById('tableBody');
     const emptyMsg = document.getElementById('emptyMsg');
 
-    // Ordinamento: prima non pagati per data crescente, poi pagati
     items.sort((a, b) => {
       if (a.pagato === b.pagato) return new Date(a.scadenza) - new Date(b.scadenza);
       return a.pagato ? 1 : -1;
@@ -334,7 +622,7 @@
 
     let totaleDaSaldare = 0;
     let totalePagato = 0;
-    let contatoreUrgenti = 0;
+    let contatoreScaduti = 0;
 
     items.forEach(it => {
       const st = getStatusInfo(it.scadenza, it.pagato);
@@ -342,13 +630,13 @@
         totalePagato += Number(it.importo);
       } else {
         totaleDaSaldare += Number(it.importo);
-        if (st.isUrgent) contatoreUrgenti++;
+        if (st.tipo === 'scaduto') contatoreScaduti++;
       }
     });
 
     document.getElementById('kpiDaSaldare').textContent = formatEuro(totaleDaSaldare);
     document.getElementById('kpiPagato').textContent = formatEuro(totalePagato);
-    document.getElementById('kpiUrgenti').textContent = contatoreUrgenti;
+    document.getElementById('kpiScaduti').textContent = contatoreScaduti;
 
     const visibili = items.filter(it => {
       if (filtroAttivo === 'in_sospeso') return !it.pagato;
@@ -366,27 +654,200 @@
     visibili.forEach(item => {
       const st = getStatusInfo(item.scadenza, item.pagato);
       const tr = document.createElement('tr');
-      if (item.pagato) tr.className = 'row-pagata';
+      tr.className = st.classeRiga;
+
+      // Suddivisione quote
+      let breakdownHtml = '-';
+      if (item.totaleRateizzato) {
+        breakdownHtml = `
+          <div style="font-size:0.8rem; line-height: 1.3;">
+            <strong>Tot. Cartella:</strong> ${formatEuro(item.totaleRateizzato)}<br>
+            <span class="tag-breakdown">Ruolo: ${formatEuro(item.ruolo)}</span>
+            <span class="tag-breakdown">Mora: ${formatEuro(item.mora)}</span>
+            <span class="tag-breakdown">Oneri: ${formatEuro(item.oneri)}</span>
+          </div>
+        `;
+      }
+
+      const dataPagamentoTxt = item.pagato && item.dataPagamento 
+        ? `<strong style="color: var(--col-pagato);">🔵 ${formatDataDisplay(item.dataPagamento)}</strong>` 
+        : '-';
+
+      const bancaTxt = item.pagato && item.banca 
+        ? `<span class="badge-banca">🏛️ ${item.banca}</span>` 
+        : '-';
 
       tr.innerHTML = `
-        <td><span class="badge ${st.classe}">${st.label}</span></td>
-        <td><strong>${item.scadenza}</strong></td>
+        <td><span class="badge ${st.classeBadge}">${st.label}</span></td>
+        <td><strong>${formatDataDisplay(item.scadenza)}</strong></td>
+        <td>${dataPagamentoTxt}</td>
+        <td>${bancaTxt}</td>
         <td><strong>${item.titolo}</strong></td>
         <td>${item.categoria}</td>
         <td><strong>${formatEuro(item.importo)}</strong></td>
+        <td>${breakdownHtml}</td>
         <td>${item.note || '-'}</td>
         <td style="text-align: right; white-space: nowrap;">
-          <button class="btn btn-small ${item.pagato ? 'btn-outline' : 'btn-success'}" onclick="togglePagato('${item.id}')">
-            ${item.pagato ? '↩ Riapri' : '✓ Pagato'}
-          </button>
-          <button class="btn btn-small btn-outline" style="color: var(--danger); border-color: var(--danger);" onclick="eliminaItem('${item.id}')">✕</button>
+          <button class="btn btn-small btn-edit" onclick="apriModifica('${item.id}')" title="Modifica tutti i campi">✏️ Modifica</button>
+          
+          ${item.pagato 
+            ? `<button class="btn btn-small btn-reopen" onclick="riapriScadenza('${item.id}')">↩ Riporta da Pagare</button>`
+            : `<button class="btn btn-small btn-pay" onclick="avviaPagamento('${item.id}')">✓ Segna Pagato</button>`
+          }
+          
+          <button class="btn btn-small btn-outline" style="color: var(--col-scaduto); border-color: #fca5a5;" onclick="eliminaItem('${item.id}')" title="Elimina">✕</button>
         </td>
       `;
       tableBody.appendChild(tr);
     });
   }
 
-  // 1. Inserimento Singolo
+  // APRE POPUP CON SCELTA DATA E BANCA
+  window.avviaPagamento = function(id) {
+    const items = getItems();
+    const target = items.find(it => it.id === id);
+    if (!target) return;
+
+    document.getElementById('payItemId').value = id;
+    document.getElementById('payModalTitolo').innerHTML = `Registra pagamento per:<br><strong>${target.titolo}</strong> (${formatEuro(target.importo)})`;
+    document.getElementById('payDataEffettiva').value = formatDataIso(new Date());
+    document.getElementById('payModal').style.display = 'flex';
+  };
+
+  window.chiudiPayModal = function() {
+    document.getElementById('payModal').style.display = 'none';
+  };
+
+  document.getElementById('payConfirmForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('payItemId').value;
+    const dataPag = document.getElementById('payDataEffettiva').value;
+    const bancaScelta = document.getElementById('payBanca').value;
+
+    const items = getItems();
+    const target = items.find(it => it.id === id);
+    if (target) {
+      salvaStatoPrecedente(target);
+      target.pagato = true;
+      target.dataPagamento = dataPag;
+      target.banca = bancaScelta;
+      saveItems(items);
+      mostraToast(`Segnato in BLU (Pagato il ${formatDataDisplay(dataPag)} tramite ${bancaScelta}): "${target.titolo}"`);
+    }
+    chiudiPayModal();
+  });
+
+  window.riapriScadenza = function(id) {
+    const items = getItems();
+    const target = items.find(it => it.id === id);
+    if (target) {
+      salvaStatoPrecedente(target);
+      target.pagato = false;
+      target.dataPagamento = null;
+      target.banca = null;
+      saveItems(items);
+      mostraToast(`Ripristinato in DA PAGARE: "${target.titolo}"`);
+    }
+  };
+
+  function salvaStatoPrecedente(obj) {
+    ultimoStatoPrecedente = {
+      id: obj.id,
+      pagato: obj.pagato,
+      dataPagamento: obj.dataPagamento,
+      banca: obj.banca
+    };
+  }
+
+  function mostraToast(messaggio) {
+    const toast = document.getElementById('toastBar');
+    document.getElementById('toastMsg').textContent = messaggio;
+    toast.style.display = 'flex';
+
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.style.display = 'none';
+    }, 6000);
+  }
+
+  window.annullaUltimaAzione = function() {
+    if (!ultimoStatoPrecedente) return;
+    const items = getItems();
+    const target = items.find(it => it.id === ultimoStatoPrecedente.id);
+    if (target) {
+      target.pagato = ultimoStatoPrecedente.pagato;
+      target.dataPagamento = ultimoStatoPrecedente.dataPagamento;
+      target.banca = ultimoStatoPrecedente.banca;
+      saveItems(items);
+    }
+    document.getElementById('toastBar').style.display = 'none';
+  };
+
+  // MODALE MODIFICA COMPLETA
+  window.apriModifica = function(id) {
+    const items = getItems();
+    const it = items.find(x => x.id === id);
+    if (!it) return;
+
+    document.getElementById('editId').value = it.id;
+    document.getElementById('editTitolo').value = it.titolo;
+    document.getElementById('editCategoria').value = it.categoria;
+    document.getElementById('editImporto').value = it.importo;
+    document.getElementById('editScadenza').value = it.scadenza;
+    document.getElementById('editStato').value = String(it.pagato);
+    document.getElementById('editDataPagamento').value = it.dataPagamento || '';
+    document.getElementById('editBanca').value = it.banca || '';
+    document.getElementById('editTotRateizzato').value = it.totaleRateizzato || '';
+    document.getElementById('editRuolo').value = it.ruolo || '';
+    document.getElementById('editMora').value = it.mora || '';
+    document.getElementById('editOneri').value = it.oneri || '';
+    document.getElementById('editNote').value = it.note || '';
+
+    toggleCampiPagamentoEdit();
+    document.getElementById('editModal').style.display = 'flex';
+  };
+
+  function toggleCampiPagamentoEdit() {
+    const isPag = document.getElementById('editStato').value === 'true';
+    document.getElementById('boxEditDatiPagamento').style.display = isPag ? 'flex' : 'none';
+  }
+
+  window.chiudiModal = function() {
+    document.getElementById('editModal').style.display = 'none';
+  };
+
+  document.getElementById('editForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('editId').value;
+    const items = getItems();
+    const it = items.find(x => x.id === id);
+    if (!it) return;
+
+    it.titolo = document.getElementById('editTitolo').value.trim();
+    it.categoria = document.getElementById('editCategoria').value;
+    it.importo = parseFloat(document.getElementById('editImporto').value);
+    it.scadenza = document.getElementById('editScadenza').value;
+    it.pagato = (document.getElementById('editStato').value === 'true');
+    
+    if (it.pagato) {
+      it.dataPagamento = document.getElementById('editDataPagamento').value || formatDataIso(new Date());
+      it.banca = document.getElementById('editBanca').value || 'BCC BARI E TARANTO';
+    } else {
+      it.dataPagamento = null;
+      it.banca = null;
+    }
+    
+    it.totaleRateizzato = parseFloat(document.getElementById('editTotRateizzato').value) || null;
+    it.ruolo = parseFloat(document.getElementById('editRuolo').value) || null;
+    it.mora = parseFloat(document.getElementById('editMora').value) || null;
+    it.oneri = parseFloat(document.getElementById('editOneri').value) || null;
+    it.note = document.getElementById('editNote').value.trim();
+
+    saveItems(items);
+    chiudiModal();
+  });
+
+  // INSERIMENTO SINGOLO
   document.getElementById('scadenzaForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const items = getItems();
@@ -397,15 +858,21 @@
       categoria: document.getElementById('categoria').value,
       importo: parseFloat(document.getElementById('importo').value),
       scadenza: document.getElementById('scadenza').value,
-      note: document.getElementById('note').value.trim(),
-      pagato: false
+      pagato: false,
+      dataPagamento: null,
+      banca: null,
+      totaleRateizzato: null,
+      ruolo: null,
+      mora: null,
+      oneri: null,
+      note: document.getElementById('note').value.trim()
     });
 
     saveItems(items);
     document.getElementById('scadenzaForm').reset();
   });
 
-  // 2. Generatore Piano Automatico
+  // GENERATORE PIANO RATEALE
   document.getElementById('pianoRatealeForm').addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -415,10 +882,10 @@
     const importoRata1 = parseFloat(document.getElementById('importoPrimaRata').value);
     const importoAltreRate = parseFloat(document.getElementById('importoAltreRate').value);
 
-    if (numRate < 2) {
-      alert("Il piano deve prevedere almeno 2 rate.");
-      return;
-    }
+    const totRateizzato = parseFloat(document.getElementById('pianoTotaleRateizzato').value) || (importoRata1 + ((numRate - 1) * importoAltreRate));
+    const quotaRuolo = parseFloat(document.getElementById('pianoRuolo').value) || 0;
+    const quotaMora = parseFloat(document.getElementById('pianoMora').value) || 0;
+    const quotaOneri = parseFloat(document.getElementById('pianoOneri').value) || 0;
 
     const dataIniziale = new Date(dataPrimaRataStr);
     const items = getItems();
@@ -430,12 +897,18 @@
 
       items.push({
         id: 'rate_' + baseTimestamp + '_' + i,
-        titolo: `${nomePiano} (Rata ${i} di ${numRate})`,
+        titolo: `${nomePiano} - Rata ${i}/${numRate}`,
         categoria: 'Rateizzazione Equitalia',
         importo: importoEffettivo,
         scadenza: formatDataIso(dataRata),
-        note: (i === 1) ? '1ª rata con importo speciale' : `Rata mensile ${i}/${numRate}`,
-        pagato: false
+        pagato: false,
+        dataPagamento: null,
+        banca: null,
+        totaleRateizzato: totRateizzato,
+        ruolo: quotaRuolo,
+        mora: quotaMora,
+        oneri: quotaOneri,
+        note: (i === 1) ? '1ª rata con importo dedicato' : `Rata ordinaria ${i}/${numRate}`
       });
     }
 
@@ -445,17 +918,8 @@
     alert(`🎉 Generato con successo il piano di ${numRate} rate per "${nomePiano}"!`);
   });
 
-  window.togglePagato = function(id) {
-    const items = getItems();
-    const target = items.find(it => it.id === id);
-    if (target) {
-      target.pagato = !target.pagato;
-      saveItems(items);
-    }
-  };
-
   window.eliminaItem = function(id) {
-    if (confirm("Vuoi rimuovere questa voce dallo scadenzario?")) {
+    if (confirm("Vuoi eliminare questa voce dallo scadenzario?")) {
       let items = getItems();
       items = items.filter(it => it.id !== id);
       saveItems(items);
@@ -469,26 +933,28 @@
     render();
   };
 
+  // ESPORTAZIONE CSV COMPLETO PER EXCEL
   document.getElementById('exportCsv').addEventListener('click', () => {
     const items = getItems();
     if (items.length === 0) {
-      alert("Nessun dato presente.");
+      alert("Nessun dato presente da esportare.");
       return;
     }
-    let csv = "\uFEFFStato;Scadenza;Descrizione;Categoria;Importo;Note\n";
+    let csv = "\uFEFFStato;Scadenza Limite;Data Effettivo Pagamento;Banca / Addebito;Descrizione Rata/Spesa;Categoria;Importo Rata;Importo Complessivo Rateizzato;di cui Iscritto a Ruolo;di cui Interessi Mora;di cui Oneri Riscossione;Note\n";
     items.forEach(it => {
       const stato = it.pagato ? "Pagato" : "Da Pagare";
-      csv += `"${stato}";"${it.scadenza}";"${it.titolo}";"${it.categoria}";"${it.importo}";"${it.note || ''}"\n`;
+      csv += `"${stato}";"${it.scadenza}";"${it.dataPagamento || ''}";"${it.banca || ''}";"${it.titolo}";"${it.categoria}";"${it.importo}";"${it.totaleRateizzato || ''}";"${it.ruolo || ''}";"${it.mora || ''}";"${it.oneri || ''}";"${it.note || ''}"\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Scadenze_Pagamenti_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `Piano_Scadenze_AdER_${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   });
 
+  // Avvio iniziale
   render();
 </script>
 </body>
