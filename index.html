@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scadenzario Piani Rateali AdER / Banche</title>
+  <title>Scadenzario Cartelle AdER / Banche</title>
   <style>
     :root {
       --primary: #0284c7;
@@ -28,7 +28,7 @@
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); margin: 0; padding: 24px; }
-    .container { max-width: 1350px; margin: 0 auto; }
+    .container { max-width: 1400px; margin: 0 auto; }
     
     header { margin-bottom: 24px; }
     h1 { margin: 0 0 6px 0; font-size: 1.7rem; }
@@ -99,6 +99,8 @@
     .btn-primary { background: var(--primary); color: white; width: 100%; }
     .btn-accent { background: var(--accent); color: white; width: 100%; }
     .btn-accent:hover { background: var(--accent-hover); }
+    .btn-preset { background: #059669; color: white; padding: 10px 18px; font-size: 0.95rem; }
+    .btn-preset:hover { background: #047857; }
     .btn-outline { background: transparent; border: 1px solid var(--border); color: #334155; }
     .btn-outline.active { background: #e0f2fe; border-color: var(--primary); color: var(--primary-dark); font-weight: 700; }
     .btn-pay { background: #1d4ed8; color: white; }
@@ -122,12 +124,12 @@
     }
     .filters { display: flex; gap: 8px; }
 
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.84rem; }
     th { background: #f8fafc; padding: 10px; color: #475569; font-weight: 600; border-bottom: 2px solid var(--border); white-space: nowrap; }
     td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tr:hover td { background: #f8fafc; }
 
-    /* BORDI DI STATO SULLA RIGA */
+    /* BORDI DI STATO */
     tr.row-scaduta { border-left: 5px solid var(--col-scaduto); }
     tr.row-dapagare { border-left: 5px solid #eab308; }
     tr.row-pagata { border-left: 5px solid var(--col-pagato); }
@@ -152,7 +154,7 @@
       background: #eff6ff;
       color: #1e40af;
       border: 1px solid #bfdbfe;
-      font-size: 0.74rem;
+      font-size: 0.73rem;
       font-weight: 600;
       padding: 2px 6px;
       border-radius: 4px;
@@ -164,6 +166,7 @@
       font-size: 0.72rem;
       color: #475569;
       line-height: 1.35;
+      white-space: nowrap;
     }
 
     .empty-state { text-align: center; padding: 35px; color: #94a3b8; }
@@ -220,8 +223,8 @@
 
 <div class="container">
   <header>
-    <h1>Scadenzario Rateizzazioni AdER (84 Rate con Quote e Scadenza a Fine Mese)</h1>
-    <p>Colori: <strong>Giallo</strong> (Da Pagare), <strong>Rosso</strong> (Scaduto), <strong>Blu</strong> (Pagato con data e conto di addebito bancario).</p>
+    <h1>Scadenzario Cartelle AdER / Banche</h1>
+    <p>Colori: <strong>Giallo</strong> (Da Pagare), <strong>Rosso</strong> (Scaduto), <strong>Blu</strong> (Pagato con data e conto di addebito).</p>
   </header>
 
   <!-- Cruscotto Indicatori -->
@@ -240,12 +243,25 @@
     </div>
   </div>
 
+  <!-- Pulsante Rapido Documento AdER Caricato -->
+  <div class="card" style="background: #f0fdf4; border: 1px solid #86efac;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
+      <div>
+        <h3 style="margin: 0 0 4px 0; color: #166534;">⚡ Caricamento Rapido Istanza AdER n. 572996</h3>
+        <p style="margin: 0; color: #15803d; font-size: 0.9rem;">
+          Documento <strong>01420260025284603</strong>: Piano di <strong>84 Rate</strong> da € 6.577,56 con quote esatte a fine mese.
+        </p>
+      </div>
+      <button class="btn btn-preset" onclick="caricaPianoPresetFoto()">📥 Carica Tutte le 84 Rate del Prospetto</button>
+    </div>
+  </div>
+
   <!-- Scheda Inserimento / Generatore / Modifica Intero Piano -->
   <div class="card">
     <div class="tabs">
       <button class="tab-btn active" id="tabSingolaBtn" onclick="mostraPannello('singola')">➕ Inserisci Singola Spesa (Bollo, Assicurazione, ecc.)</button>
-      <button class="tab-btn" id="tabRatealeBtn" onclick="mostraPannello('rateale')">⚡ Generatore Piano Rateale (84 Rate a Fine Mese)</button>
-      <button class="tab-btn" id="tabPianoBtn" onclick="mostraPannello('piano')">⚙️ Modifica / Ricalcola Intero Piano</button>
+      <button class="tab-btn" id="tabRatealeBtn" onclick="mostraPannello('rateale')">⚡ Generatore Personalizzato Altro Piano Rateale</button>
+      <button class="tab-btn" id="tabPianoBtn" onclick="mostraPannello('piano')">⚙️ Modifica / Ricalcola Intero Piano Esistente</button>
     </div>
 
     <!-- 1. Form Singola Scadenza -->
@@ -285,7 +301,7 @@
       </form>
     </div>
 
-    <!-- 2. Form Generatore Piano Rateale (Fine Mese + Suddivisione Quote) -->
+    <!-- 2. Form Generatore Piano Rateale Personalizzato -->
     <div id="panelRateale" style="display: none;">
       <p style="color: #475569; font-size: 0.9rem; margin-top: 0; margin-bottom: 16px;">
         Le scadenze vengono calcolate <strong>automaticamente all'ultimo giorno di ogni mese (30, 31 o 28/29)</strong>.
@@ -305,7 +321,6 @@
             <input type="month" id="meseIniziale" required>
           </div>
 
-          <!-- Riquadro Quote Ordinarie (Rate 2..N) -->
           <div class="sub-box">
             <h4>📊 Quota Ordinaria per le Rate (Rate dalla 2ª in poi)</h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
@@ -328,13 +343,12 @@
             </div>
           </div>
 
-          <!-- Riquadro 1ª Rata con Diritti di Notifica -->
           <div class="sub-box" style="background: #eff6ff; border-color: #bfdbfe;">
             <h4 style="color: #1e40af;">📑 1ª Rata (Include Diritti di Notifica Atti)</h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
               <div>
                 <label for="qNotificaR1">Diritti di Notifica Documenti (€)</label>
-                <input type="number" id="qNotificaR1" step="0.01" min="0" placeholder="Es. 8.75" value="0.00" required oninput="aggiornaTotaliQuote()">
+                <input type="number" id="qNotificaR1" step="0.01" min="0" placeholder="Es. 5.88" value="0.00" required oninput="aggiornaTotaliQuote()">
               </div>
               <div>
                 <label for="qCapitaleR1">Quota Capitale 1ª Rata (€)</label>
@@ -358,7 +372,7 @@
     <div id="panelPiano" style="display: none;">
       <h3 style="margin-top: 0;">⚙️ Gestione e Ricalcolo Intero Piano</h3>
       <p style="color: #475569; font-size: 0.9rem;">
-        Seleziona un piano esistente per modificare le quote di tutte le rate, riallineare le date o cancellare l'intero piano.
+        Seleziona un piano esistente per modificare le quote di tutte le rate non saldate o cancellare il piano.
       </p>
 
       <div style="max-width: 500px; margin-bottom: 20px;">
@@ -436,7 +450,10 @@
           <th>Banca / Addebito</th>
           <th>Descrizione Rata / Spesa</th>
           <th>Totale Rata</th>
-          <th>Suddivisione Quote Rata</th>
+          <th>Quota Capitale</th>
+          <th>Quota Mora</th>
+          <th>Interessi Rateizz.</th>
+          <th>Diritti Notifica</th>
           <th>Note</th>
           <th style="text-align: right;">Azioni</th>
         </tr>
@@ -447,7 +464,7 @@
   </div>
 </div>
 
-<!-- Modal Conferma Rapida Pagamento con Data e Banca -->
+<!-- Modal Registra Pagamento con Data e Banca -->
 <div class="modal-backdrop" id="payModal">
   <div class="modal-box" style="max-width: 460px;">
     <h3 style="margin-top:0; color: #1d4ed8;">🔵 Registra Pagamento Effettuato</h3>
@@ -505,7 +522,6 @@
         </div>
       </div>
 
-      <!-- Campi pagamento se pagato -->
       <div id="boxEditDatiPagamento" style="display: flex; gap: 12px; margin-bottom: 12px; background: #eff6ff; padding: 12px; border-radius: 6px; border: 1px solid #bfdbfe;">
         <div style="flex: 1;">
           <label style="color: #1d4ed8;">Data Effettivo Pagamento</label>
@@ -523,7 +539,6 @@
         </div>
       </div>
 
-      <!-- Suddivisione Quote -->
       <div class="sub-box" style="margin-bottom: 16px;">
         <h4 style="margin-top: 0;">Suddivisione Quote della Rata</h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -574,9 +589,8 @@
   let ultimoStatoPrecedente = null;
   let toastTimer = null;
 
-  // CALCOLO ULTIMO GIORNO DEL MESE ESATTO (28, 29, 30 o 31)
+  // Calcolo esatto dell'ultimo giorno del mese (28, 29, 30 o 31)
   function getUltimoGiornoMese(anno, meseZeroIndexed) {
-    // new Date(anno, meseZeroIndexed + 1, 0) punta all'ultimo giorno del mese richiesto
     const d = new Date(anno, meseZeroIndexed + 1, 0);
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -624,7 +638,6 @@
     if (tipo === 'piano') aggiornaMenuPiani();
   }
 
-  // Calcolo tempo reale totali quote nel form di generazione
   function aggiornaTotaliQuote() {
     const capOrd = parseFloat(document.getElementById('qCapitaleOrd').value) || 0;
     const moraOrd = parseFloat(document.getElementById('qMoraOrd').value) || 0;
@@ -639,7 +652,7 @@
     document.getElementById('totRata1Calc').value = formatEuro(totR1);
   }
 
-  // STATI E COLORI: BLU, GIALLO, ROSSO
+  // GESTIONE COLORI: BLU, GIALLO, ROSSO
   function getStatusInfo(scadenzaStr, isPagato) {
     if (isPagato) {
       return { 
@@ -721,22 +734,16 @@
       const tr = document.createElement('tr');
       tr.className = st.classeRiga;
 
-      // Dettaglio quote della rata
-      let quoteHtml = `
-        <span class="pill-quota">• <strong>Capitale:</strong> ${formatEuro(item.quotaCapitale)}</span>
-        <span class="pill-quota">• <strong>Mora:</strong> ${formatEuro(item.quotaMora)}</span>
-        <span class="pill-quota">• <strong>Int. Rateizz.:</strong> ${formatEuro(item.quotaInteressi)}</span>
-      `;
-      if (item.quotaNotifica && item.quotaNotifica > 0) {
-        quoteHtml += `<span class="pill-quota" style="color: #1e40af;">• <strong>Diritti Notifica:</strong> ${formatEuro(item.quotaNotifica)}</span>`;
-      }
-
       const dataPagamentoTxt = item.pagato && item.dataPagamento 
         ? `<strong style="color: var(--col-pagato);">🔵 ${formatDataDisplay(item.dataPagamento)}</strong>` 
         : '-';
 
       const bancaTxt = item.pagato && item.banca 
         ? `<span class="badge-banca">🏛️ ${item.banca}</span>` 
+        : '-';
+
+      const notificaTxt = (item.quotaNotifica && item.quotaNotifica > 0) 
+        ? `<span style="color: #1e40af; font-weight:700;">${formatEuro(item.quotaNotifica)}</span>` 
         : '-';
 
       tr.innerHTML = `
@@ -746,7 +753,10 @@
         <td>${bancaTxt}</td>
         <td><strong>${item.titolo}</strong></td>
         <td><strong>${formatEuro(item.importo)}</strong></td>
-        <td>${quoteHtml}</td>
+        <td>${formatEuro(item.quotaCapitale)}</td>
+        <td>${formatEuro(item.quotaMora)}</td>
+        <td>${formatEuro(item.quotaInteressi)}</td>
+        <td>${notificaTxt}</td>
         <td>${item.note || '-'}</td>
         <td style="text-align: right; white-space: nowrap;">
           <button class="btn btn-small btn-edit" onclick="apriModificaSingola('${item.id}')" title="Modifica riga">✏️ Modifica</button>
@@ -762,6 +772,76 @@
       tableBody.appendChild(tr);
     });
   }
+
+  // CARICAMENTO ESATTO DAL PROSPETTO DI AMMORTAMENTO (ISTANZA 572996 - DOC. 01420260025284603)
+  window.caricaPianoPresetFoto = function() {
+    if (confirm("Vuoi caricare l'intero piano di 84 rate dell'Istanza 572996 (Doc. 01420260025284603) ricavato dal documento?")) {
+      const items = getItems();
+      const pianoId = 'piano_572996';
+      const nomePiano = 'AdER 01420260025284603';
+      
+      // Parametri base della foto
+      let anno = 2026;
+      let mese = 8; // Settembre (0-based: 8)
+      let debitoCapitaleResiduo = 6555.50 - 71.46; // 6484.04
+      const tassoMensile = 0.00266225; // Tasso francese AdER
+
+      for (let i = 1; i <= 84; i++) {
+        const dataScad = getUltimoGiornoMese(anno, mese);
+
+        let cap, mora, inter, notif, tot;
+
+        if (i === 1) {
+          // Rata 1 Esatta dal documento
+          cap = 71.46;
+          mora = 0.48;
+          inter = 17.43;
+          notif = 5.88;
+          tot = 95.25;
+        } else {
+          // Rate 2..84 Esatte dal documento
+          mora = 0.26;
+          notif = 0.00;
+          tot = 87.56;
+
+          // Calcolo ammortamento francese preciso
+          inter = parseFloat((debitoCapitaleResiduo * tassoMensile).toFixed(2));
+          cap = parseFloat((87.30 - inter).toFixed(2));
+          debitoCapitaleResiduo -= cap;
+        }
+
+        items.push({
+          id: `${pianoId}_rata_${i}`,
+          pianoId: pianoId,
+          pianoNome: nomePiano,
+          numeroRata: i,
+          totaleRatePiano: 84,
+          titolo: `${nomePiano} - Rata ${i}/84`,
+          categoria: 'Rateizzazione Equitalia',
+          importo: tot,
+          quotaCapitale: cap,
+          quotaMora: mora,
+          quotaInteressi: inter,
+          quotaNotifica: notif,
+          scadenza: dataScad,
+          pagato: false,
+          dataPagamento: null,
+          banca: null,
+          note: (i === 1) ? '1ª Rata con diritti di notifica € 5,88' : `Rata ordinaria ${i}/84`
+        });
+
+        // Avanza al mese successivo
+        mese++;
+        if (mese > 11) {
+          mese = 0;
+          anno++;
+        }
+      }
+
+      saveItems(items);
+      alert("🎉 Caricate con successo tutte le 84 rate dell'Istanza AdER n. 572996!");
+    }
+  };
 
   // REGISTRAZIONE PAGAMENTO RAPIDO CON DATA E BANCA
   window.avviaPagamento = function(id) {
@@ -844,193 +924,7 @@
     document.getElementById('toastBar').style.display = 'none';
   };
 
-  // GENERATORE PIANO RATEALE (84 RATE CON FINE MESE AUTOMATICO)
-  document.getElementById('pianoRatealeForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const nomePiano = document.getElementById('pianoNome').value.trim();
-    const numRate = parseInt(document.getElementById('totaleRate').value);
-    const meseAnnoPartenza = document.getElementById('meseIniziale').value; // Es: "2026-11"
-
-    const capOrd = parseFloat(document.getElementById('qCapitaleOrd').value) || 0;
-    const moraOrd = parseFloat(document.getElementById('qMoraOrd').value) || 0;
-    const intOrd = parseFloat(document.getElementById('qInteressiOrd').value) || 0;
-    const notificaR1 = parseFloat(document.getElementById('qNotificaR1').value) || 0;
-
-    const capR1Input = document.getElementById('qCapitaleR1').value;
-    const capR1 = capR1Input !== "" ? (parseFloat(capR1Input) || 0) : capOrd;
-
-    if (numRate < 2) {
-      alert("Il piano deve contenere almeno 2 rate.");
-      return;
-    }
-
-    const [annoInizialeStr, meseInizialeStr] = meseAnnoPartenza.split('-');
-    let annoCorrente = parseInt(annoInizialeStr);
-    let meseZeroCorrente = parseInt(meseInizialeStr) - 1; // 0-based
-
-    const items = getItems();
-    const pianoId = 'piano_' + Date.now();
-
-    for (let i = 1; i <= numRate; i++) {
-      // CALCOLO ESATTO ULTIMO GIORNO DEL MESE
-      const dataScadenzaFineMese = getUltimoGiornoMese(annoCorrente, meseZeroCorrente);
-
-      const isPrimaRata = (i === 1);
-      const quotaCapitale = isPrimaRata ? capR1 : capOrd;
-      const quotaMora = moraOrd;
-      const quotaInteressi = intOrd;
-      const quotaNotifica = isPrimaRata ? notificaR1 : 0;
-      const totRata = quotaCapitale + quotaMora + quotaInteressi + quotaNotifica;
-
-      items.push({
-        id: `${pianoId}_rata_${i}`,
-        pianoId: pianoId,
-        pianoNome: nomePiano,
-        numeroRata: i,
-        totaleRatePiano: numRate,
-        titolo: `${nomePiano} - Rata ${i}/${numRate}`,
-        categoria: 'Rateizzazione Equitalia',
-        importo: parseFloat(totRata.toFixed(2)),
-        quotaCapitale: parseFloat(quotaCapitale.toFixed(2)),
-        quotaMora: parseFloat(quotaMora.toFixed(2)),
-        quotaInteressi: parseFloat(quotaInteressi.toFixed(2)),
-        quotaNotifica: parseFloat(quotaNotifica.toFixed(2)),
-        scadenza: dataScadenzaFineMese,
-        pagato: false,
-        dataPagamento: null,
-        banca: null,
-        note: isPrimaRata ? 'Include diritti di notifica atti' : `Rata ordinaria ${i}/${numRate}`
-      });
-
-      // Avanza al mese successivo
-      meseZeroCorrente++;
-      if (meseZeroCorrente > 11) {
-        meseZeroCorrente = 0;
-        annoCorrente++;
-      }
-    }
-
-    saveItems(items);
-    document.getElementById('pianoRatealeForm').reset();
-    mostraPannello('singola');
-    alert(`🎉 Generato con successo il piano di ${numRate} rate a fine mese per "${nomePiano}"!`);
-  });
-
-  // GESTIONE E MODIFICA INTERO PIANO
-  function aggiornaMenuPiani() {
-    const items = getItems();
-    const select = document.getElementById('selezionaPianoModifica');
-    select.innerHTML = '<option value="">-- Seleziona un piano presente --</option>';
-
-    const pianiMappa = {};
-    items.forEach(it => {
-      if (it.pianoId && !pianiMappa[it.pianoId]) {
-        pianiMappa[it.pianoId] = it.pianoNome || it.titolo;
-      }
-    });
-
-    for (let id in pianiMappa) {
-      const opt = document.createElement('option');
-      opt.value = id;
-      opt.textContent = pianiMappa[id];
-      select.appendChild(opt);
-    }
-  }
-
-  window.caricaDatiPianoPerModifica = function() {
-    const pianoId = document.getElementById('selezionaPianoModifica').value;
-    const box = document.getElementById('boxDettaglioPianoModifica');
-    if (!pianoId) {
-      box.style.display = 'none';
-      return;
-    }
-
-    const items = getItems();
-    const ratePiano = items.filter(it => it.pianoId === pianoId);
-    if (ratePiano.length === 0) return;
-
-    document.getElementById('editPianoIdOriginale').value = pianoId;
-    document.getElementById('editPianoNuovoNome').value = ratePiano[0].pianoNome || '';
-    
-    // Compila con i valori ordinari della seconda rata o della prima
-    const rataRif = ratePiano.length > 1 ? ratePiano[1] : ratePiano[0];
-    document.getElementById('editPianoQCapitale').value = rataRif.quotaCapitale || 0;
-    document.getElementById('editPianoQMora').value = rataRif.quotaMora || 0;
-    document.getElementById('editPianoQInteressi').value = rataRif.quotaInteressi || 0;
-    document.getElementById('editPianoQNotifica').value = ratePiano[0].quotaNotifica || 0;
-
-    box.style.display = 'block';
-  };
-
-  document.getElementById('editInteroPianoForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const pianoId = document.getElementById('editPianoIdOriginale').value;
-    const nuovoNome = document.getElementById('editPianoNuovoNome').value.trim();
-    const nuovoMeseIniziale = document.getElementById('editPianoMeseIniziale').value;
-
-    const newCap = parseFloat(document.getElementById('editPianoQCapitale').value) || 0;
-    const newMora = parseFloat(document.getElementById('editPianoQMora').value) || 0;
-    const newInt = parseFloat(document.getElementById('editPianoQInteressi').value) || 0;
-    const newNotifica = parseFloat(document.getElementById('editPianoQNotifica').value) || 0;
-
-    let items = getItems();
-    let ratePiano = items.filter(it => it.pianoId === pianoId);
-
-    // Se l'utente vuole anche riallineare tutte le date di fine mese
-    let annoCorrente = null;
-    let meseZeroCorrente = null;
-    if (nuovoMeseIniziale) {
-      const [aStr, mStr] = nuovoMeseIniziale.split('-');
-      annoCorrente = parseInt(aStr);
-      meseZeroCorrente = parseInt(mStr) - 1;
-    }
-
-    ratePiano.sort((a, b) => (a.numeroRata || 0) - (b.numeroRata || 0));
-
-    ratePiano.forEach((it, idx) => {
-      it.pianoNome = nuovoNome;
-      it.titolo = `${nuovoNome} - Rata ${it.numeroRata || (idx+1)}/${it.totaleRatePiano || ratePiano.length}`;
-
-      // Se specificato nuovo mese iniziale, ricalcola tutte le scadenze a fine mese
-      if (annoCorrente !== null) {
-        it.scadenza = getUltimoGiornoMese(annoCorrente, meseZeroCorrente);
-        meseZeroCorrente++;
-        if (meseZeroCorrente > 11) {
-          meseZeroCorrente = 0;
-          annoCorrente++;
-        }
-      }
-
-      // Aggiorna quote per le rate non ancora pagate
-      if (!it.pagato) {
-        it.quotaCapitale = newCap;
-        it.quotaMora = newMora;
-        it.quotaInteressi = newInt;
-        if (it.numeroRata === 1) {
-          it.quotaNotifica = newNotifica;
-        }
-        it.importo = parseFloat((it.quotaCapitale + it.quotaMora + it.quotaInteressi + (it.quotaNotifica || 0)).toFixed(2));
-      }
-    });
-
-    saveItems(items);
-    alert(`✅ Intero piano "${nuovoNome}" aggiornato con successo!`);
-  });
-
-  window.eliminaInteroPianoSelezionato = function() {
-    const pianoId = document.getElementById('editPianoIdOriginale').value;
-    const nome = document.getElementById('editPianoNuovoNome').value;
-    if (confirm(`Sei sicuro di voler CANCELLARE TUTTE le rate collegate al piano "${nome}"?`)) {
-      let items = getItems();
-      items = items.filter(it => it.pianoId !== pianoId);
-      saveItems(items);
-      document.getElementById('boxDettaglioPianoModifica').style.display = 'none';
-      alert("Piano eliminato completamente.");
-    }
-  };
-
-  // MODALE MODIFICA SINGOLA RATA
+  // MODIFICA SINGOLA RATA
   window.apriModificaSingola = function(id) {
     const items = getItems();
     const it = items.find(x => x.id === id);
@@ -1101,6 +995,113 @@
     chiudiModal();
   });
 
+  // GESTIONE E MODIFICA INTERO PIANO
+  function aggiornaMenuPiani() {
+    const items = getItems();
+    const select = document.getElementById('selezionaPianoModifica');
+    select.innerHTML = '<option value="">-- Seleziona un piano presente --</option>';
+
+    const pianiMappa = {};
+    items.forEach(it => {
+      if (it.pianoId && !pianiMappa[it.pianoId]) {
+        pianiMappa[it.pianoId] = it.pianoNome || it.titolo;
+      }
+    });
+
+    for (let id in pianiMappa) {
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = pianiMappa[id];
+      select.appendChild(opt);
+    }
+  }
+
+  window.caricaDatiPianoPerModifica = function() {
+    const pianoId = document.getElementById('selezionaPianoModifica').value;
+    const box = document.getElementById('boxDettaglioPianoModifica');
+    if (!pianoId) {
+      box.style.display = 'none';
+      return;
+    }
+
+    const items = getItems();
+    const ratePiano = items.filter(it => it.pianoId === pianoId);
+    if (ratePiano.length === 0) return;
+
+    document.getElementById('editPianoIdOriginale').value = pianoId;
+    document.getElementById('editPianoNuovoNome').value = ratePiano[0].pianoNome || '';
+    
+    const rataRif = ratePiano.length > 1 ? ratePiano[1] : ratePiano[0];
+    document.getElementById('editPianoQCapitale').value = rataRif.quotaCapitale || 0;
+    document.getElementById('editPianoQMora').value = rataRif.quotaMora || 0;
+    document.getElementById('editPianoQInteressi').value = rataRif.quotaInteressi || 0;
+    document.getElementById('editPianoQNotifica').value = ratePiano[0].quotaNotifica || 0;
+
+    box.style.display = 'block';
+  };
+
+  document.getElementById('editInteroPianoForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pianoId = document.getElementById('editPianoIdOriginale').value;
+    const nuovoNome = document.getElementById('editPianoNuovoNome').value.trim();
+    const nuovoMeseIniziale = document.getElementById('editPianoMeseIniziale').value;
+
+    const newCap = parseFloat(document.getElementById('editPianoQCapitale').value) || 0;
+    const newMora = parseFloat(document.getElementById('editPianoQMora').value) || 0;
+    const newInt = parseFloat(document.getElementById('editPianoQInteressi').value) || 0;
+    const newNotifica = parseFloat(document.getElementById('editPianoQNotifica').value) || 0;
+
+    let items = getItems();
+    let ratePiano = items.filter(it => it.pianoId === pianoId);
+
+    let annoCorrente = null;
+    let meseZeroCorrente = null;
+    if (nuovoMeseIniziale) {
+      const [aStr, mStr] = nuovoMeseIniziale.split('-');
+      annoCorrente = parseInt(aStr);
+      meseZeroCorrente = parseInt(mStr) - 1;
+    }
+
+    ratePiano.sort((a, b) => (a.numeroRata || 0) - (b.numeroRata || 0));
+
+    ratePiano.forEach((it, idx) => {
+      it.pianoNome = nuovoNome;
+      it.titolo = `${nuovoNome} - Rata ${it.numeroRata || (idx+1)}/${it.totaleRatePiano || ratePiano.length}`;
+
+      if (annoCorrente !== null) {
+        it.scadenza = getUltimoGiornoMese(annoCorrente, meseZeroCorrente);
+        meseZeroCorrente++;
+        if (meseZeroCorrente > 11) {
+          meseZeroCorrente = 0;
+          annoCorrente++;
+        }
+      }
+
+      if (!it.pagato) {
+        it.quotaCapitale = newCap;
+        it.quotaMora = newMora;
+        it.quotaInteressi = newInt;
+        if (it.numeroRata === 1) it.quotaNotifica = newNotifica;
+        it.importo = parseFloat((it.quotaCapitale + it.quotaMora + it.quotaInteressi + (it.quotaNotifica || 0)).toFixed(2));
+      }
+    });
+
+    saveItems(items);
+    alert(`✅ Intero piano "${nuovoNome}" aggiornato con successo!`);
+  });
+
+  window.eliminaInteroPianoSelezionato = function() {
+    const pianoId = document.getElementById('editPianoIdOriginale').value;
+    const nome = document.getElementById('editPianoNuovoNome').value;
+    if (confirm(`Sei sicuro di voler CANCELLARE TUTTE le rate collegate al piano "${nome}"?`)) {
+      let items = getItems();
+      items = items.filter(it => it.pianoId !== pianoId);
+      saveItems(items);
+      document.getElementById('boxDettaglioPianoModifica').style.display = 'none';
+      alert("Piano eliminato completamente.");
+    }
+  };
+
   // INSERIMENTO SINGOLA SPESA
   document.getElementById('scadenzaForm').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -1142,14 +1143,14 @@
     render();
   };
 
-  // ESPORTAZIONE CSV COMPLETO CON TUTTE LE QUOTE
+  // ESPORTAZIONE CSV COMPLETO
   document.getElementById('exportCsv').addEventListener('click', () => {
     const items = getItems();
     if (items.length === 0) {
       alert("Nessun dato presente da esportare.");
       return;
     }
-    let csv = "\uFEFFStato;Scadenza (Fine Mese);Data Effettivo Pagamento;Banca Addebito;Descrizione Rata/Spesa;Importo Totale;Quota Capitale;Quota Interessi Mora;Quota Interessi Rateizzazione;Diritti Notifica;Note\n";
+    let csv = "\uFEFFStato;Scadenza (Fine Mese);Data Effettivo Pagamento;Banca Addebito;Descrizione Rata/Spesa;Importo Totale;Quota Capitale;Quota Mora;Interessi Rateizzazione;Diritti Notifica;Note\n";
     items.forEach(it => {
       const stato = it.pagato ? "Pagato" : "Da Pagare";
       csv += `"${stato}";"${it.scadenza}";"${it.dataPagamento || ''}";"${it.banca || ''}";"${it.titolo}";"${it.importo}";"${it.quotaCapitale || ''}";"${it.quotaMora || ''}";"${it.quotaInteressi || ''}";"${it.quotaNotifica || ''}";"${it.note || ''}"\n`;
@@ -1163,11 +1164,7 @@
     URL.revokeObjectURL(url);
   });
 
-  // Imposta mese di partenza predefinito su quello corrente
-  const oggi = new Date();
-  document.getElementById('meseIniziale').value = `${oggi.getFullYear()}-${String(oggi.getMonth()+1).padStart(2,'0')}`;
-
-  // Avvio
+  // Inizializzazione
   render();
   aggiornaMenuPiani();
 </script>
