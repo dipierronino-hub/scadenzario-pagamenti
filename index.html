@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scadenzario Cartelle AdER / Banche</title>
-  <!-- Libreria PDF.js per lettura diretta dei file PDF nel browser -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     :root {
@@ -53,6 +52,38 @@
       gap: 8px;
     }
 
+    /* Barra Selettore Piano/Cartella */
+    .filter-plan-bar {
+      background: #ffffff;
+      border: 2px solid var(--primary);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 2px 5px rgba(2,132,199,0.08);
+    }
+    .filter-plan-bar label {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0369a1;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .filter-plan-bar select {
+      max-width: 480px;
+      font-size: 1rem;
+      font-weight: 600;
+      border: 1.5px solid var(--primary);
+      background-color: #f0f9ff;
+      color: #0c4a6e;
+    }
+
     /* Cruscotto Indicatori Completo a 6 Riquadri */
     .kpi-grid {
       display: grid;
@@ -73,6 +104,30 @@
     .kpi-title { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
     .kpi-val { font-size: 1.5rem; font-weight: 700; margin-top: 6px; }
     .kpi-sub { font-size: 0.8rem; color: var(--muted); margin-top: 4px; font-weight: 500; }
+
+    /* Box Elenco Dinamico di Tutte le Cartelle */
+    .plans-overview {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .plan-card-item {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-left: 5px solid #059669;
+      border-radius: 8px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .plan-card-item.active-plan {
+      border-left-color: var(--primary);
+      background: #f0f9ff;
+      border-color: #bae6fd;
+    }
 
     .card {
       background: var(--card-bg);
@@ -237,18 +292,29 @@
     </div>
   </header>
 
-  <!-- Cruscotto Indicatori Completo con Nuove Voci Richieste -->
+  <!-- BARRA SELETTORE: SEPARA I TOTALI O LI SOMMA TUTTI INSIEME -->
+  <div class="filter-plan-bar">
+    <label for="filtroPianoSelect">
+      <span>🔎 Visualizza Totali e Rate per:</span>
+      <select id="filtroPianoSelect" onchange="impostaFiltroPiano(this.value)">
+        <!-- Opzioni popolate automaticamente -->
+      </select>
+    </label>
+    <div id="badgeFiltroAttivo" style="font-size: 0.85rem; font-weight: 600; color: #0369a1;"></div>
+  </div>
+
+  <!-- Cruscotto Indicatori Completo -->
   <div class="kpi-grid">
     <div class="kpi-card" style="border-left: 4px solid var(--col-dapagare);">
       <div class="kpi-title">Residuo da Pagare</div>
       <div class="kpi-val" id="kpiDaSaldare" style="color: var(--col-dapagare);">€ 0,00</div>
-      <div class="kpi-sub">Totale importo da saldare</div>
+      <div class="kpi-sub" id="kpiDaSaldareSub">Totale piano selezionato</div>
     </div>
 
     <div class="kpi-card" style="border-left: 4px solid var(--col-pagato);">
       <div class="kpi-title">Totale Già Pagato</div>
       <div class="kpi-val" id="kpiPagato" style="color: var(--col-pagato);">€ 0,00</div>
-      <div class="kpi-sub">Totale versato ad oggi</div>
+      <div class="kpi-sub">Versato ad oggi</div>
     </div>
 
     <div class="kpi-card" style="border-left: 4px solid var(--primary);">
@@ -260,45 +326,73 @@
     <div class="kpi-card">
       <div class="kpi-title">Rate da Pagare</div>
       <div class="kpi-val" id="kpiNumDaPagare" style="color: var(--col-dapagare);">0</div>
-      <div class="kpi-sub">Numero rate ancora aperte</div>
+      <div class="kpi-sub">Aperte nel piano selezionato</div>
     </div>
 
     <div class="kpi-card">
       <div class="kpi-title">Rate Scadute</div>
       <div class="kpi-val" id="kpiScaduti" style="color: var(--col-scaduto);">0</div>
-      <div class="kpi-sub">Rate oltre la data di scadenza</div>
+      <div class="kpi-sub">Oltre la data limite</div>
     </div>
 
     <div class="kpi-card">
       <div class="kpi-title">Rate Pagate</div>
       <div class="kpi-val" id="kpiNumPagate" style="color: var(--col-pagato);">0</div>
-      <div class="kpi-sub">Numero rate saldate con successo</div>
+      <div class="kpi-sub">Saldate con successo</div>
     </div>
   </div>
 
-  <!-- Pulsante Rapido Documento AdER Caricato al Centesimo dal PDF -->
-  <div class="card" style="background: #f0fdf4; border: 1px solid #86efac;">
-    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
-      <div>
-        <h3 style="margin: 0 0 4px 0; color: #166534;">⚡ Istanza AdER n. 572996 (Doc. 01420260025284603)</h3>
-        <p style="margin: 0; color: #15803d; font-size: 0.9rem;">
-          Tutte le <strong>84 rate</strong> trascritte fedelmente dal prospetto ufficiale (quote capitale, mora, interessi e notifica).
-        </p>
-      </div>
-      <button class="btn btn-preset" onclick="caricaPianoUfficiale572996()">📥 Ricarica le 84 Rate dal PDF Ufficiale</button>
+  <!-- RIEPILOGO DINAMICO DI TUTTE LE CARTELLE CARICATE -->
+  <div class="card" style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+      <h3 style="margin: 0; color: #1e293b; font-size: 1.05rem;">📋 Tutte le Cartelle & Piani Registrati</h3>
+      <button class="btn btn-preset" style="padding: 6px 12px; font-size: 0.82rem;" onclick="caricaPianoUfficiale572996()">+ Ricarica Istanza 572996 Ufficiale</button>
+    </div>
+    <div id="plansOverviewContainer" class="plans-overview">
+      <!-- Generato dinamicamente con una card per ogni cartella -->
     </div>
   </div>
 
   <!-- Scheda Inserimento / Gestione -->
   <div class="card">
     <div class="tabs">
-      <button class="tab-btn active" id="tabSingolaBtn" onclick="mostraPannello('singola')">➕ Inserisci Singola Spesa (Bollo, Assicurazione, ecc.)</button>
-      <button class="tab-btn" id="tabImportBtn" onclick="mostraPannello('importa')">📂 Importa Altra Cartella da Scansione / File</button>
+      <button class="tab-btn active" id="tabImportBtn" onclick="mostraPannello('importa')">📂 Importa Altra Cartella da File PDF / CSV</button>
+      <button class="tab-btn" id="tabSingolaBtn" onclick="mostraPannello('singola')">➕ Inserisci Singola Spesa (Bollo, Assicurazione, ecc.)</button>
       <button class="tab-btn" id="tabPianoBtn" onclick="mostraPannello('piano')">⚙️ Gestione Piani Caricati</button>
     </div>
 
-    <!-- 1. Form Singola Scadenza -->
-    <div id="panelSingola">
+    <!-- 1. Importazione da File PDF, CSV o Testo -->
+    <div id="panelImporta">
+      <h3 style="margin-top:0; color: #0f766e;">📥 Importazione Piano da File PDF AdER / CSV</h3>
+      <p style="color: #475569; font-size: 0.9rem; margin-bottom: 14px;">
+        Seleziona direttamente il file <strong>PDF</strong> del piano di ammortamento o incolla il testo delle rate:
+      </p>
+
+      <form id="importForm">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label for="importNomePiano">Nome Piano / Cartella (autocompilato dal PDF):</label>
+            <input type="text" id="importNomePiano" placeholder="Es. Cartella AdER n. 01420250038532163" required>
+          </div>
+          <div>
+            <label for="importPdfFile">Seleziona File PDF (o CSV):</label>
+            <input type="file" id="importPdfFile" accept=".pdf, .csv, .txt">
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label for="importTesto">Dati tabella estratti (o incollati manualmente):</label>
+          <textarea id="importTesto" rows="6" placeholder="Rata;Data;Capitale;Mora;Interessi;Notifica;Totale
+1;30/09/2026;71.46;0.48;17.43;5.88;95.25
+2;31/10/2026;70.04;0.26;17.26;0.00;87.56"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: auto; padding: 10px 18px;">⚡ Salva Nuova Cartella nello Scadenzario</button>
+      </form>
+    </div>
+
+    <!-- 2. Form Singola Scadenza -->
+    <div id="panelSingola" style="display: none;">
       <form id="scadenzaForm">
         <div class="form-grid">
           <div style="grid-column: span 2;">
@@ -334,41 +428,11 @@
       </form>
     </div>
 
-    <!-- 2. Importazione da File PDF, CSV o Testo -->
-    <div id="panelImporta" style="display: none;">
-      <h3 style="margin-top:0; color: #0f766e;">📥 Importazione Piano da File PDF AdER / CSV</h3>
-      <p style="color: #475569; font-size: 0.9rem; margin-bottom: 14px;">
-        Seleziona direttamente il file <strong>PDF</strong> del piano di ammortamento: il sistema ne estrarrà i dati automaticamente.
-      </p>
-
-      <form id="importForm">
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
-          <div>
-            <label for="importNomePiano">Nome Piano / Cartella (autocompilato dal PDF):</label>
-            <input type="text" id="importNomePiano" placeholder="Es. Cartella AdER n. 2026/..." required>
-          </div>
-          <div>
-            <label for="importPdfFile">Seleziona File PDF (o CSV):</label>
-            <input type="file" id="importPdfFile" accept=".pdf, .csv, .txt">
-          </div>
-        </div>
-
-        <div style="margin-bottom: 14px;">
-          <label for="importTesto">Anteprima dati estratti (compilata in automatico dal PDF):</label>
-          <textarea id="importTesto" rows="6" placeholder="Rata;Data;Capitale;Mora;Interessi;Notifica;Totale
-1;30/09/2026;71.46;0.48;17.43;5.88;95.25
-2;31/10/2026;70.04;0.26;17.26;0.00;87.56"></textarea>
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="width: auto; padding: 10px 18px;">⚡ Importa Rate nel Registro</button>
-      </form>
-    </div>
-
     <!-- 3. Gestione Piani -->
     <div id="panelPiano" style="display: none;">
       <h3 style="margin-top: 0;">⚙️ Gestione Piani Caricati</h3>
       <div style="max-width: 500px; margin-bottom: 20px;">
-        <label for="selezionaPianoModifica">Seleziona Piano:</label>
+        <label for="selezionaPianoModifica">Seleziona Piano da Gestire:</label>
         <select id="selezionaPianoModifica" onchange="caricaDatiPianoPerModifica()">
           <option value="">-- Seleziona un piano --</option>
         </select>
@@ -391,9 +455,9 @@
   <div class="card">
     <div class="toolbar">
       <div class="filters">
-        <button class="btn btn-outline active" onclick="setFiltro('tutti')">Tutti</button>
-        <button class="btn btn-outline" onclick="setFiltro('in_sospeso')">Da Pagare (Giallo / Rosso)</button>
-        <button class="btn btn-outline" onclick="setFiltro('pagati')">Pagati (Blu)</button>
+        <button class="btn btn-outline active" onclick="setFiltroStato('tutti')">Tutti</button>
+        <button class="btn btn-outline" onclick="setFiltroStato('in_sospeso')">Da Pagare (Giallo / Rosso)</button>
+        <button class="btn btn-outline" onclick="setFiltroStato('pagati')">Pagati (Blu)</button>
       </div>
       <div>
         <button id="exportCsv" class="btn btn-primary" style="width: auto;">📥 Esporta Excel Dettagliato (CSV)</button>
@@ -419,7 +483,7 @@
       </thead>
       <tbody id="tableBody"></tbody>
     </table>
-    <div id="emptyMsg" class="empty-state">Nessuna voce presente nello scadenzario.</div>
+    <div id="emptyMsg" class="empty-state">Nessuna voce presente per la selezione attuale.</div>
   </div>
 </div>
 
@@ -634,7 +698,8 @@
     { n: 84, d: '2033-08-31', cap: 87.06, mora: 0.26, int: 0.24,  notif: 0.00, tot: 87.56 }
   ];
 
-  let filtroAttivo = 'tutti';
+  let filtroStatoAttivo = 'tutti';
+  let filtroPianoAttivo = null; // null = prima cartella attiva di default
   let ultimoStatoPrecedente = null;
   let toastTimer = null;
 
@@ -719,16 +784,93 @@
     return { label: labelTesto, classeBadge: 'badge-dapagare', classeRiga: 'row-dapagare', tipo: 'dapagare' };
   }
 
-  function render() {
-    const items = getItems();
-    const tableBody = document.getElementById('tableBody');
-    const emptyMsg = document.getElementById('emptyMsg');
+  window.impostaFiltroPiano = function(val) {
+    filtroPianoAttivo = val;
+    render();
+  };
 
-    items.sort((a, b) => {
-      if (a.pagato === b.pagato) return new Date(a.scadenza) - new Date(b.scadenza);
-      return a.pagato ? 1 : -1;
+  function render() {
+    const allItems = getItems();
+
+    // 1. Mappa di tutte le cartelle presenti
+    const mappaPiani = {};
+    allItems.forEach(it => {
+      const pId = it.pianoId || 'SPESE_SINGOLE';
+      const pNome = it.pianoNome || (pId === 'SPESE_SINGOLE' ? 'Spese Singole / Varie' : it.titolo);
+      if (!mappaPiani[pId]) {
+        mappaPiani[pId] = { id: pId, nome: pNome, totaleRate: 0, pagate: 0, daPagare: 0, residuo: 0, scadute: 0 };
+      }
+      mappaPiani[pId].totaleRate++;
+      const st = getStatusInfo(it.scadenza, it.pagato);
+      if (it.pagato) {
+        mappaPiani[pId].pagate++;
+      } else {
+        mappaPiani[pId].daPagare++;
+        mappaPiani[pId].residuo += Number(it.importo);
+        if (st.tipo === 'scaduto') mappaPiani[pId].scadute++;
+      }
     });
 
+    const listaChiaviPiani = Object.keys(mappaPiani);
+
+    // Se il filtro non è impostato, impostalo di default sulla prima cartella trovata per tenerle separate!
+    if (!filtroPianoAttivo || (!mappaPiani[filtroPianoAttivo] && filtroPianoAttivo !== 'TUTTI_SOMMATI')) {
+      filtroPianoAttivo = listaChiaviPiani.length > 0 ? listaChiaviPiani[0] : 'TUTTI_SOMMATI';
+    }
+
+    // 2. Popola il menu a tendina in alto
+    const selectPiani = document.getElementById('filtroPianoSelect');
+    selectPiani.innerHTML = '';
+    
+    // Opzione somma complessiva
+    const optSomma = document.createElement('option');
+    optSomma.value = 'TUTTI_SOMMATI';
+    optSomma.textContent = '📊 TUTTE LE CARTELLE (Somma Complessiva)';
+    selectPiani.appendChild(optSomma);
+
+    listaChiaviPiani.forEach(k => {
+      const opt = document.createElement('option');
+      opt.value = k;
+      opt.textContent = `📁 ${mappaPiani[k].nome}`;
+      selectPiani.appendChild(opt);
+    });
+    selectPiani.value = filtroPianoAttivo;
+
+    // 3. Genera le card del riepilogo "Tutte le Cartelle Registrate"
+    const containerCards = document.getElementById('plansOverviewContainer');
+    containerCards.innerHTML = '';
+    listaChiaviPiani.forEach(k => {
+      const p = mappaPiani[k];
+      const div = document.createElement('div');
+      const isAttivo = (filtroPianoAttivo === k);
+      div.className = `plan-card-item ${isAttivo ? 'active-plan' : ''}`;
+      div.innerHTML = `
+        <div>
+          <strong style="color: #0f172a; font-size: 0.95rem;">${p.nome}</strong><br>
+          <span style="font-size: 0.8rem; color: #475569;">Rate: <strong>${p.pagate}/${p.totaleRate}</strong> pagate</span> | 
+          <span style="font-size: 0.8rem; color: var(--col-dapagare);">Residuo: <strong>${formatEuro(p.residuo)}</strong></span>
+          ${p.scadute > 0 ? `<br><span style="font-size: 0.75rem; color: var(--col-scaduto); font-weight:700;">⚠️ ${p.scadute} rate scadute</span>` : ''}
+        </div>
+        <button class="btn btn-small ${isAttivo ? 'btn-primary' : 'btn-outline'}" onclick="impostaFiltroPiano('${k}')">
+          ${isAttivo ? '✓ Attiva' : '👁️ Visualizza solo questa'}
+        </button>
+      `;
+      containerCards.appendChild(div);
+    });
+
+    // 4. Filtra gli elementi in base alla cartella scelta
+    let itemsFiltrati = allItems;
+    if (filtroPianoAttivo !== 'TUTTI_SOMMATI') {
+      itemsFiltrati = allItems.filter(it => (it.pianoId || 'SPESE_SINGOLE') === filtroPianoAttivo);
+      const nomeAttivo = mappaPiani[filtroPianoAttivo] ? mappaPiani[filtroPianoAttivo].nome : '';
+      document.getElementById('badgeFiltroAttivo').textContent = `Stai visualizzando solo: ${nomeAttivo}`;
+      document.getElementById('kpiDaSaldareSub').textContent = `Residuo di "${nomeAttivo}"`;
+    } else {
+      document.getElementById('badgeFiltroAttivo').textContent = `Stai visualizzando il totale sommato di tutte le cartelle`;
+      document.getElementById('kpiDaSaldareSub').textContent = `Totale di tutte le cartelle sommate`;
+    }
+
+    // 5. Calcolo KPI sui soli elementi filtrati
     let totaleDaSaldare = 0;
     let totalePagato = 0;
     let contatoreScaduti = 0;
@@ -736,7 +878,7 @@
     let contatoreDaPagare = 0;
     let nonPagati = [];
 
-    items.forEach(it => {
+    itemsFiltrati.forEach(it => {
       const st = getStatusInfo(it.scadenza, it.pagato);
       if (it.pagato) {
         totalePagato += Number(it.importo);
@@ -776,9 +918,18 @@
       document.getElementById('kpiProssimaDettaglio').textContent = 'Tutto saldato!';
     }
 
-    const visibili = items.filter(it => {
-      if (filtroAttivo === 'in_sospeso') return !it.pagato;
-      if (filtroAttivo === 'pagati') return it.pagato;
+    // 6. Tabella: filtra anche per stato (Tutti, Da Pagare, Pagati)
+    const tableBody = document.getElementById('tableBody');
+    const emptyMsg = document.getElementById('emptyMsg');
+
+    itemsFiltrati.sort((a, b) => {
+      if (a.pagato === b.pagato) return new Date(a.scadenza) - new Date(b.scadenza);
+      return a.pagato ? 1 : -1;
+    });
+
+    const visibili = itemsFiltrati.filter(it => {
+      if (filtroStatoAttivo === 'in_sospeso') return !it.pagato;
+      if (filtroStatoAttivo === 'pagati') return it.pagato;
       return true;
     });
 
@@ -863,10 +1014,12 @@
       });
     });
 
+    filtroPianoAttivo = pianoId;
     saveItems(items);
+    alert("🎉 Istanza AdER n. 572996 (84 rate) ricaricata e impostata come cartella attiva!");
   };
 
-  // SINCRONIZZAZIONE TRAMITE CARTELLA CONDIVISA
+  // SINCRONIZZAZIONE CONDIVISA
   window.esportaFileCondiviso = function() {
     const items = getItems();
     if (items.length === 0) {
@@ -912,7 +1065,7 @@
 
     if (file.name.toLowerCase().endsWith('.pdf')) {
       if (typeof pdfjsLib === 'undefined') {
-        alert("Libreria PDF non caricata. Verifica che il computer sia connesso a Internet.");
+        alert("Libreria PDF non caricata. Verifica la connessione a Internet.");
         return;
       }
 
@@ -930,11 +1083,10 @@
           }
 
           if (!fullText.trim()) {
-            alert("⚠️ Questo PDF è una scansione immagine (non contiene testo digitale). Invia il file PDF qui nella nostra chat e ti preparerò subito il blocco dati pronto!");
+            alert("⚠️ Questo PDF è una scansione immagine. Invia il file PDF qui nella nostra chat e ti preparerò subito il blocco dati pronto!");
             return;
           }
 
-          // Riconoscimento automatico Nome Documento / Istanza
           const docMatch = fullText.match(/\b014\d{13,17}\b/) || fullText.match(/\b\d{16,20}\b/);
           const istanzaMatch = fullText.match(/istanza\s*(\d+)/i);
           let nomePiano = '';
@@ -943,10 +1095,7 @@
           else nomePiano = file.name.replace(/\.[^/.]+$/, '');
           document.getElementById('importNomePiano').value = nomePiano;
 
-          // Parsing delle righe della tabella
           let righeEstratte = [];
-          
-          // Ricerca 1ª Rata
           const dateR1Match = fullText.match(/(?:Scadenza\s*Prima\s*Rata|Prima\s*Rata).*?(\d{2}\/\d{2}\/\d{4})/i) || fullText.match(/(\d{2}\/\d{2}\/\d{4})/);
           const capR1Match = fullText.match(/Quota\s*capitale\s*€?\s*([\d\.,]+)/i);
           const moraR1Match = fullText.match(/Quota\s*interessi\s*di\s*mora\s*€?\s*([\d\.,]+)/i);
@@ -958,7 +1107,6 @@
             righeEstratte.push(`1;${dateR1Match[1]};${capR1Match[1]};${moraR1Match ? moraR1Match[1] : '0'};${intR1Match ? intR1Match[1] : '0'};${notifR1Match ? notifR1Match[1] : '0'};${totR1Match ? totR1Match[1] : ''}`);
           }
 
-          // Ricerca rate successive (2..N)
           const regexRiga = /\b([2-9]|[1-9]\d{1,2})\s+(\d{2}\/\d{2}\/\d{4})\s+€?\s*([\d\.,]+)\s+€?\s*([\d\.,]+)\s+€?\s*([\d\.,]+)(?:\s+€?\s*([\d\.,]+))?\s+€?\s*([\d\.,]+)/g;
           let m;
           while ((m = regexRiga.exec(fullText)) !== null) {
@@ -973,7 +1121,7 @@
 
           if (righeEstratte.length > 0) {
             document.getElementById('importTesto').value = "Rata;Data;Capitale;Mora;Interessi;Notifica;Totale\n" + righeEstratte.join('\n');
-            alert(`✅ PDF analizzato con successo! Riconosciute ${righeEstratte.length} rate per "${nomePiano}". Clicca su 'Importa Rate nel Registro' per salvarle.`);
+            alert(`✅ PDF analizzato con successo! Riconosciute ${righeEstratte.length} rate per "${nomePiano}". Clicca su 'Salva Nuova Cartella' per aggiungerla.`);
           } else {
             alert("Il testo del PDF è stato estratto ma la tabella ha una disposizione non standard. Invia il file qui in chat per caricarlo all'istante.");
           }
@@ -984,7 +1132,6 @@
       };
       reader.readAsArrayBuffer(file);
     } else {
-      // Gestione file CSV o TXT
       const reader = new FileReader();
       reader.onload = function(evt) {
         document.getElementById('importTesto').value = evt.target.result;
@@ -1052,11 +1199,12 @@
 
     let items = getItems();
     items = items.concat(importati);
+    filtroPianoAttivo = pianoId; // Imposta automaticamente la nuova cartella come attiva
     saveItems(items);
 
     document.getElementById('importTesto').value = '';
     document.getElementById('importPdfFile').value = '';
-    alert(`🎉 Importate con successo ${importati.length} rate per "${nomePiano}"!`);
+    alert(`🎉 Importate con successo ${importati.length} rate per la nuova cartella "${nomePiano}"!`);
   });
 
   // GESTIONE PAGAMENTO CON DATA E BANCA
@@ -1203,11 +1351,11 @@
     chiudiModal();
   });
 
-  // GESTIONE PIANI
+  // GESTIONE PIANI (Pannello 3)
   function aggiornaMenuPiani() {
     const items = getItems();
     const select = document.getElementById('selezionaPianoModifica');
-    select.innerHTML = '<option value="">-- Seleziona un piano presente --</option>';
+    select.innerHTML = '<option value="">-- Seleziona un piano --</option>';
 
     const pianiMappa = {};
     items.forEach(it => {
@@ -1258,6 +1406,7 @@
     if (confirm("Vuoi cancellare tutte le rate di questo piano?")) {
       let items = getItems();
       items = items.filter(it => it.pianoId !== pianoId);
+      filtroPianoAttivo = 'TUTTI_SOMMATI';
       saveItems(items);
       document.getElementById('boxDettaglioPianoModifica').style.display = 'none';
       alert("Piano eliminato.");
@@ -1272,6 +1421,8 @@
 
     items.push({
       id: 'id_' + Date.now(),
+      pianoId: 'SPESE_SINGOLE',
+      pianoNome: 'Spese Singole / Varie',
       titolo: document.getElementById('titolo').value.trim(),
       categoria: document.getElementById('categoria').value,
       importo: imp,
@@ -1298,8 +1449,8 @@
     }
   };
 
-  window.setFiltro = function(f) {
-    filtroAttivo = f;
+  window.setFiltroStato = function(f) {
+    filtroStatoAttivo = f;
     document.querySelectorAll('.filters .btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
     render();
@@ -1326,6 +1477,7 @@
     URL.revokeObjectURL(url);
   });
 
+  // Inizializzazione
   if (getItems().length === 0) {
     caricaPianoUfficiale572996();
   }
