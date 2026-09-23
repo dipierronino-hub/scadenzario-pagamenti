@@ -8,6 +8,8 @@
     :root {
       --primary: #0284c7;
       --primary-dark: #0369a1;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
       --bg: #f1f5f9;
       --card-bg: #ffffff;
       --text: #0f172a;
@@ -81,10 +83,16 @@
     }
     .btn:hover { opacity: 0.9; }
     .btn-primary { background: var(--primary); color: white; width: 100%; }
+    .btn-accent { background: var(--accent); color: white; width: 100%; }
+    .btn-accent:hover { background: var(--accent-hover); }
     .btn-outline { background: transparent; border: 1px solid var(--border); color: #334155; }
     .btn-outline.active { background: #e0f2fe; border-color: var(--primary); color: var(--primary-dark); font-weight: 700; }
     .btn-success { background: var(--success); color: white; }
     .btn-small { padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; }
+
+    .tabs { display: flex; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+    .tab-btn { background: none; border: none; font-size: 1rem; font-weight: 600; color: var(--muted); cursor: pointer; padding: 6px 12px; border-radius: 6px; }
+    .tab-btn.active { background: #e2e8f0; color: var(--text); }
 
     .toolbar {
       display: flex;
@@ -122,13 +130,13 @@
 <div class="container">
   <header>
     <h1>Scadenzario & Gestione Rateizzazioni</h1>
-    <p>Monitora scadenze di Equitalia, bolli, polizze assicurative e tributi con calcolo automatico delle priorità.</p>
+    <p>Monitora scadenze di Equitalia, bolli, polizze assicurative e piani di rientro rateali.</p>
   </header>
 
   <!-- Cruscotto Indicatori -->
   <div class="kpi-grid">
     <div class="kpi-card">
-      <div class="kpi-title">Totale da Saldare</div>
+      <div class="kpi-title">Totale Residuo da Saldare</div>
       <div class="kpi-val" id="kpiDaSaldare" style="color: var(--danger);">€ 0,00</div>
     </div>
     <div class="kpi-card">
@@ -136,47 +144,88 @@
       <div class="kpi-val" id="kpiUrgenti" style="color: var(--warning);">0</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-title">Totale Già Pagato</div>
+      <div class="kpi-title">Totale Già Saldato</div>
       <div class="kpi-val" id="kpiPagato" style="color: var(--success);">€ 0,00</div>
     </div>
   </div>
 
-  <!-- Form Inserimento Nuova Scadenza -->
+  <!-- Scheda Inserimento / Generatore -->
   <div class="card">
-    <h3 style="margin-top: 0; margin-bottom: 16px;">+ Aggiungi Nuova Scadenza</h3>
-    <form id="scadenzaForm">
-      <div class="form-grid">
-        <div style="grid-column: span 2;">
-          <label for="titolo">Descrizione Pagamento</label>
-          <input type="text" id="titolo" placeholder="Es. Rata Riscossione n. 4 / Bollo Auto" required>
+    <div class="tabs">
+      <button class="tab-btn active" id="tabSingolaBtn" onclick="mostraPannello('singola')">➕ Inserisci Singola Scadenza</button>
+      <button class="tab-btn" id="tabRatealeBtn" onclick="mostraPannello('rateale')">⚡ Genera Piano Rateale (es. 84 rate Equitalia)</button>
+    </div>
+
+    <!-- 1. Form Singola Scadenza -->
+    <div id="panelSingola">
+      <form id="scadenzaForm">
+        <div class="form-grid">
+          <div style="grid-column: span 2;">
+            <label for="titolo">Descrizione Pagamento</label>
+            <input type="text" id="titolo" placeholder="Es. Bollo Auto, Assicurazione Q5" required>
+          </div>
+          <div>
+            <label for="categoria">Categoria</label>
+            <select id="categoria" required>
+              <option value="Bollo Auto">Bollo Auto</option>
+              <option value="Assicurazione">Assicurazione</option>
+              <option value="Rateizzazione Equitalia">Rateizzazione Equitalia / AdER</option>
+              <option value="F24 / Tributi">F24 / Tributi</option>
+              <option value="Altro">Altro</option>
+            </select>
+          </div>
+          <div>
+            <label for="importo">Importo (€)</label>
+            <input type="number" id="importo" step="0.01" min="0" placeholder="0.00" required>
+          </div>
+          <div>
+            <label for="scadenza">Data Scadenza</label>
+            <input type="date" id="scadenza" required>
+          </div>
+          <div>
+            <label for="note">Note / Riferimento</label>
+            <input type="text" id="note" placeholder="Es. Targa, protocollo">
+          </div>
+          <div>
+            <button type="submit" class="btn btn-primary">Salva Scadenza</button>
+          </div>
         </div>
-        <div>
-          <label for="categoria">Categoria</label>
-          <select id="categoria" required>
-            <option value="Rateizzazione Equitalia">Rateizzazione Equitalia / AdER</option>
-            <option value="Bollo Auto">Bollo Auto</option>
-            <option value="Assicurazione">Assicurazione</option>
-            <option value="F24 / Tributi">F24 / Tributi</option>
-            <option value="Altro">Altro Pagamento</option>
-          </select>
+      </form>
+    </div>
+
+    <!-- 2. Form Generatore Piano Rateale -->
+    <div id="panelRateale" style="display: none;">
+      <p style="color: #475569; font-size: 0.9rem; margin-top: 0; margin-bottom: 16px;">
+        Compila i campi sottostanti: verranno create automaticamente tutte le rate con cadenza mensile.
+      </p>
+      <form id="pianoRatealeForm">
+        <div class="form-grid">
+          <div style="grid-column: span 2;">
+            <label for="pianoNome">Nome Piano / Riferimento Cartella</label>
+            <input type="text" id="pianoNome" placeholder="Es. Rateizzazione Cartella AdER n. 2026/123" required>
+          </div>
+          <div>
+            <label for="totaleRate">Numero Totale Rate</label>
+            <input type="number" id="totaleRate" value="84" min="2" max="120" required>
+          </div>
+          <div>
+            <label for="primaScadenza">Data Scadenza 1ª Rata</label>
+            <input type="date" id="primaScadenza" required>
+          </div>
+          <div>
+            <label for="importoPrimaRata">Importo 1ª Rata (€)</label>
+            <input type="number" id="importoPrimaRata" step="0.01" min="0" placeholder="Es. 250.00" required>
+          </div>
+          <div>
+            <label for="importoAltreRate">Importo Altre Rate (€)</label>
+            <input type="number" id="importoAltreRate" step="0.01" min="0" placeholder="Es. 180.00" required>
+          </div>
+          <div>
+            <button type="submit" class="btn btn-accent">⚡ Genera Tutte le Rate</button>
+          </div>
         </div>
-        <div>
-          <label for="importo">Importo (€)</label>
-          <input type="number" id="importo" step="0.01" min="0" placeholder="0.00" required>
-        </div>
-        <div>
-          <label for="scadenza">Data Scadenza</label>
-          <input type="date" id="scadenza" required>
-        </div>
-        <div>
-          <label for="note">Note / Riferimento</label>
-          <input type="text" id="note" placeholder="Es. Targa, protocollo, cartella">
-        </div>
-        <div>
-          <button type="submit" class="btn btn-primary">Salva Scadenza</button>
-        </div>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
 
   <!-- Tabella Registro Scadenze -->
@@ -226,6 +275,33 @@
     return Number(val).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
   }
 
+  function formatDataIso(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  // Aggiunge N mesi mantenendo il giorno corretto
+  function aggiungiMesi(dataBase, mesiDaAggiungere) {
+    const giornoIniziale = dataBase.getDate();
+    const d = new Date(dataBase.getTime());
+    d.setDate(1);
+    d.setMonth(d.getMonth() + mesiDaAggiungere);
+    
+    // Gestione fine mese se il mese d'arrivo ha meno giorni
+    const maxGiorniNelMese = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    d.setDate(Math.min(giornoIniziale, maxGiorniNelMese));
+    return d;
+  }
+
+  function mostraPannello(tipo) {
+    document.getElementById('panelSingola').style.display = tipo === 'singola' ? 'block' : 'none';
+    document.getElementById('panelRateale').style.display = tipo === 'rateale' ? 'block' : 'none';
+    document.getElementById('tabSingolaBtn').classList.toggle('active', tipo === 'singola');
+    document.getElementById('tabRatealeBtn').classList.toggle('active', tipo === 'rateale');
+  }
+
   function getStatusInfo(scadenzaStr, isPagato) {
     if (isPagato) return { label: 'Pagato', classe: 'badge-pagato' };
 
@@ -256,7 +332,6 @@
       return a.pagato ? 1 : -1;
     });
 
-    // Calcolo metriche KPI
     let totaleDaSaldare = 0;
     let totalePagato = 0;
     let contatoreUrgenti = 0;
@@ -275,7 +350,6 @@
     document.getElementById('kpiPagato').textContent = formatEuro(totalePagato);
     document.getElementById('kpiUrgenti').textContent = contatoreUrgenti;
 
-    // Filtro elementi per tabella
     const visibili = items.filter(it => {
       if (filtroAttivo === 'in_sospeso') return !it.pagato;
       if (filtroAttivo === 'pagati') return it.pagato;
@@ -312,12 +386,12 @@
     });
   }
 
-  // Gestione Form
+  // 1. Inserimento Singolo
   document.getElementById('scadenzaForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const items = getItems();
 
-    const newItem = {
+    items.push({
       id: 'id_' + Date.now(),
       titolo: document.getElementById('titolo').value.trim(),
       categoria: document.getElementById('categoria').value,
@@ -325,12 +399,50 @@
       scadenza: document.getElementById('scadenza').value,
       note: document.getElementById('note').value.trim(),
       pagato: false
-    };
+    });
 
-    items.push(newItem);
     saveItems(items);
-
     document.getElementById('scadenzaForm').reset();
+  });
+
+  // 2. Generatore Piano Automatico
+  document.getElementById('pianoRatealeForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const nomePiano = document.getElementById('pianoNome').value.trim();
+    const numRate = parseInt(document.getElementById('totaleRate').value);
+    const dataPrimaRataStr = document.getElementById('primaScadenza').value;
+    const importoRata1 = parseFloat(document.getElementById('importoPrimaRata').value);
+    const importoAltreRate = parseFloat(document.getElementById('importoAltreRate').value);
+
+    if (numRate < 2) {
+      alert("Il piano deve prevedere almeno 2 rate.");
+      return;
+    }
+
+    const dataIniziale = new Date(dataPrimaRataStr);
+    const items = getItems();
+    const baseTimestamp = Date.now();
+
+    for (let i = 1; i <= numRate; i++) {
+      const dataRata = aggiungiMesi(dataIniziale, i - 1);
+      const importoEffettivo = (i === 1) ? importoRata1 : importoAltreRate;
+
+      items.push({
+        id: 'rate_' + baseTimestamp + '_' + i,
+        titolo: `${nomePiano} (Rata ${i} di ${numRate})`,
+        categoria: 'Rateizzazione Equitalia',
+        importo: importoEffettivo,
+        scadenza: formatDataIso(dataRata),
+        note: (i === 1) ? '1ª rata con importo speciale' : `Rata mensile ${i}/${numRate}`,
+        pagato: false
+      });
+    }
+
+    saveItems(items);
+    document.getElementById('pianoRatealeForm').reset();
+    mostraPannello('singola');
+    alert(`🎉 Generato con successo il piano di ${numRate} rate per "${nomePiano}"!`);
   });
 
   window.togglePagato = function(id) {
@@ -357,7 +469,6 @@
     render();
   };
 
-  // Esportazione CSV
   document.getElementById('exportCsv').addEventListener('click', () => {
     const items = getItems();
     if (items.length === 0) {
@@ -378,7 +489,6 @@
     URL.revokeObjectURL(url);
   });
 
-  // Avvio iniziale
   render();
 </script>
 </body>
